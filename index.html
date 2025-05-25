@@ -1,59 +1,110 @@
 <!DOCTYPE html>
-<html lang="he">
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>חיפוש וניגון YouTube</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>YouTube Streams Wall</title>
   <style>
-    body { font-family: Arial; direction: rtl; padding: 20px; }
-    #results img { cursor: pointer; width: 160px; margin: 5px; }
-    #player { margin-top: 20px; }
+  h1 {
+  margin-top: 0;
+}
+
+#search {
+  background: rgb(241, 30, 30);
+  color: white;
+  padding: 20px;
+  border-radius: 10px 10px 0 0;
+  text-align: center;
+}
+
+#results {
+  background: rgb(240, 240, 240);
+  padding: 20px;
+  border: 1px solid rgb(214, 214, 214);
+  border-radius: 0 0 10px 10px;
+  text-align: center;
+}
+
+.viedoContainer {
+  width: 100%;
+  max-width: 600px;
+  margin: 40px auto 0;
+  padding: 0 20px 20px;
+  background: white;
+  border: 1px solid rgb(214, 214, 214);
+  border-radius: 10px;
+  text-align: left;
+}
   </style>
 </head>
 <body>
-  <h1>חיפוש סרטוני YouTube וניגון</h1>
-  <input id="search-input" type="text" placeholder="הקלד לחיפוש" />
-  <button id="search-btn">חפש</button>
+  <section class="wall">
+    <h1>Some Streams</h1>
+	<div id="search">
+  <h1>Search YouTube (API)</h1>
+  <label for="searchQuery">Search YouTube: <label>
+  <input type="text" id="searchQuery" name="searchQuery" placeholder="Enter search here" />
+  <button id="searchButton">Search</button>
+</div>
 
-  <div id="results"></div>
-
-  <div id="player"></div>
+<div id="results">Results:</div>
+  </section>
 
   <script>
-    const apiKey = 'AIzaSyCKWg2Po9gpQTx2-SSadDOouTB04jBFAAU'; 
+  const apiKey = 'AIzaSyCucRPiYESnpi1fTrr3XOqAjIWr7J3Jcb8'; 
+const googleAPIUrl = 'https://www.googleapis.com/youtube/v3/search';
 
-    const searchInput = document.getElementById('search-input');
-    const searchBtn = document.getElementById('search-btn');
-    const resultsDiv = document.getElementById('results');
-    const playerDiv = document.getElementById('player');
+const resultsDiv = document.querySelector('#results');
+const searchButton = document.querySelector('#searchButton');
 
-    searchBtn.addEventListener('click', () => {
-      const query = searchInput.value.trim();
-      if (!query) return alert('אנא הזן מילת חיפוש');
 
-      fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&maxResults=5&q=${encodeURIComponent(query)}&key=${apiKey}`)
-        .then(res => res.json())
-        .then(data => {
-          resultsDiv.innerHTML = '';
-          playerDiv.innerHTML = '';
-          data.items.forEach(item => {
-            const thumbUrl = item.snippet.thumbnails.default.url;
-            const title = item.snippet.title;
-            const videoId = item.id.videoId;
+searchButton.addEventListener('click', (e) => {
+  
+  const searchTerm = document.querySelector('#searchQuery').value;
+  const apiPrefix = '&key=';
+  const searchQuery = '?part=snippet&q=' + searchTerm + apiPrefix + apiKey;
+  const url = googleAPIUrl + searchQuery;
 
-            const img = document.createElement('img');
-            img.src = thumbUrl;
-            img.title = title;
-            img.alt = title;
+  resultsDiv.innerText = 'Below are results for your search term: ' + searchTerm;
+  
+  fetch(url)
+    .then(response => response.json())
+    .then(data => {
 
-            img.addEventListener('click', () => {
-              playerDiv.innerHTML = `<iframe width="560" height="315" src="https://www.youtube.com/embed/${videoId}?autoplay=1" frameborder="0" allowfullscreen></iframe>`;
-            });
+      data.items.forEach(item => {
+        console.log(item);
 
-            resultsDiv.appendChild(img);
-          });
-        })
-        .catch(err => alert('שגיאה בחיפוש: ' + err.message));
+        if (item.id.videoId != undefined) {
+          const link = `https://www.youtube.com/watch=?v=${item.id.videoId}`;
+          const video = `https://www.youtube.com/embed/${item.id.videoId}`;
+          const title = item.snippet.title;
+          const channel = item.snippet.channelTitle;
+          const description = item.snippet.description;
+          const thumbnail = item.snippet.thumbnails.high.url;
+
+          resultsDiv.innerHTML += `
+            <div class="viedoContainer">
+              <h3>${title}</h3>
+              <iframe width="100%" src="${video}"
+              title="${title}" style="aspect-ratio: 788 / 443;" frameborder="0"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+              allowfullscreen></iframe>
+              <div>
+                <h4>${channel}</h4>
+                <p>${description}</p>
+                <a href="${link}">
+                  <button>View on Youtube</button>
+                </a>
+              </div>
+            </div>
+          `;
+        }
+      });
+    }).catch(err => {
+    resultsDiv.innerText = "Sorry we couldn't find what you searched for, or there has been an issue, please try searching for something else above or try again later";
     });
+});
   </script>
 </body>
 </html>
+
