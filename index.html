@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="he">
+<head>
+  <meta charset="UTF-8" />
+  <title>חיפוש וניגון YouTube</title>
+  <style>
+    body { font-family: Arial; direction: rtl; padding: 20px; }
+    #results img { cursor: pointer; width: 160px; margin: 5px; }
+    #player { margin-top: 20px; }
+  </style>
+</head>
+<body>
+  <h1>חיפוש סרטוני YouTube וניגון</h1>
+  <input id="search-input" type="text" placeholder="הקלד לחיפוש" />
+  <button id="search-btn">חפש</button>
+
+  <div id="results"></div>
+
+  <div id="player"></div>
+
+  <script>
+    const apiKey = 'AIzaSyCKWg2Po9gpQTx2-SSadDOouTB04jBFAAU'; 
+
+    const searchInput = document.getElementById('search-input');
+    const searchBtn = document.getElementById('search-btn');
+    const resultsDiv = document.getElementById('results');
+    const playerDiv = document.getElementById('player');
+
+    searchBtn.addEventListener('click', () => {
+      const query = searchInput.value.trim();
+      if (!query) return alert('אנא הזן מילת חיפוש');
+
+      fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&maxResults=5&q=${encodeURIComponent(query)}&key=${apiKey}`)
+        .then(res => res.json())
+        .then(data => {
+          resultsDiv.innerHTML = '';
+          playerDiv.innerHTML = '';
+          data.items.forEach(item => {
+            const thumbUrl = item.snippet.thumbnails.default.url;
+            const title = item.snippet.title;
+            const videoId = item.id.videoId;
+
+            const img = document.createElement('img');
+            img.src = thumbUrl;
+            img.title = title;
+            img.alt = title;
+
+            img.addEventListener('click', () => {
+              playerDiv.innerHTML = `<iframe width="560" height="315" src="https://www.youtube.com/embed/${videoId}?autoplay=1" frameborder="0" allowfullscreen></iframe>`;
+            });
+
+            resultsDiv.appendChild(img);
+          });
+        })
+        .catch(err => alert('שגיאה בחיפוש: ' + err.message));
+    });
+  </script>
+</body>
+</html>
