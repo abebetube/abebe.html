@@ -1,22 +1,14 @@
 <!DOCTYPE html>
 <html lang="he" dir="rtl">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>AbeTube Peer - חיפוש ללא פרסומות</title>
+  <meta charset="UTF-8">
+  <title>AbeTube Peer - סטרימינג ללא פרסומות</title>
   <style>
     body {
-      font-family: Arial, sans-serif;
-      margin: 1em;
-      background: #f4f4f4;
-      color: #222;
-      transition: background-color 0.3s, color 0.3s;
-    }
-    @media (prefers-color-scheme: dark) {
-      body {
-        background: #121212;
-        color: #eee;
-      }
+      font-family: sans-serif;
+      background-color: #f5f5f5;
+      padding: 1em;
+      color: #333;
     }
     h1 {
       text-align: center;
@@ -24,126 +16,80 @@
     #search {
       display: flex;
       justify-content: center;
-      gap: 0.5em;
       margin-bottom: 1em;
-      flex-wrap: wrap;
     }
-    #query {
+    input, button {
       padding: 0.5em;
       font-size: 1em;
-      width: 250px;
     }
-    button {
-      padding: 0.5em 1em;
-      font-size: 1em;
-      cursor: pointer;
-    }
-    .results {
-      display: grid;
-      grid-template-columns: repeat(auto-fit,minmax(250px,1fr));
-      gap: 1em;
+    #query {
+      width: 60%;
+      margin-left: 0.5em;
     }
     .video {
-      background: white;
-      border-radius: 8px;
-      overflow: hidden;
-      cursor: pointer;
       border: 1px solid #ccc;
-      transition: transform 0.15s ease-in-out;
-    }
-    .video:hover {
-      transform: scale(1.03);
-      border-color: #007bff;
+      border-radius: 10px;
+      padding: 0.5em;
+      margin: 1em 0;
+      background: white;
     }
     .video img {
       width: 100%;
-      display: block;
-      aspect-ratio: 16/9;
-      object-fit: cover;
+      border-radius: 8px;
     }
     .video-title {
-      padding: 0.5em;
       font-weight: bold;
-      text-align: center;
-    }
-    #player {
-      margin: 1em auto;
-      max-width: 720px;
-      border-radius: 10px;
-      overflow: hidden;
-      box-shadow: 0 0 12px rgba(0,0,0,0.2);
+      margin: 0.5em 0;
     }
     iframe {
       width: 100%;
-      height: 405px;
+      height: 360px;
       border: none;
-      display: block;
-    }
-    p.message {
-      text-align: center;
-      font-size: 1.1em;
       margin-top: 1em;
     }
   </style>
 </head>
 <body>
 
-<h1>AbeTube Peer - צפייה בסרטונים ללא פרסומות</h1>
+<h1>AbeTube Peer - צפייה ללא פרסומות</h1>
 
 <div id="search">
-  <input type="text" id="query" placeholder="הקלד מילת חיפוש..." />
-  <button onclick="searchVideos()">חפש</button>
+  <button onclick="search()">חפש</button>
+  <input id="query" type="text" placeholder="חפש סרטון ב-PeerTube">
 </div>
 
-<div id="player"></div>
-<div class="results" id="results"></div>
+<div id="results"></div>
 
 <script>
-  async function searchVideos() {
-    const query = document.getElementById('query').value.trim();
-    const resultsDiv = document.getElementById('results');
-    const playerDiv = document.getElementById('player');
-    resultsDiv.innerHTML = '';
-    playerDiv.innerHTML = '';
+async function search() {
+  const query = document.getElementById('query').value;
+  const resultsDiv = document.getElementById('results');
+  resultsDiv.innerHTML = 'טוען...';
 
-    if (!query) {
-      resultsDiv.innerHTML = '<p class="message">אנא הזן מילת חיפוש.</p>';
+  try {
+    const res = await fetch(`https://sepiasearch.joinpeertube.org/api/v1/search/videos?search=${encodeURIComponent(query)}`);
+    const data = await res.json();
+    resultsDiv.innerHTML = '';
+
+    if (!data.results.length) {
+      resultsDiv.innerHTML = 'לא נמצאו תוצאות.';
       return;
     }
 
-    resultsDiv.innerHTML = '<p class="message">טוען תוצאות...</p>';
-
-    try {
-      const res = await fetch(`https://sepiasearch.joinpeertube.org/api/v1/search/videos?search=${encodeURIComponent(query)}`);
-      if (!res.ok) throw new Error('שגיאת רשת');
-      const data = await res.json();
-
-      if (!data.results || data.results.length === 0) {
-        resultsDiv.innerHTML = '<p class="message">לא נמצאו תוצאות.</p>';
-        return;
-      }
-
-      resultsDiv.innerHTML = '';
-      data.results.forEach(video => {
-        // וידאו מכיל שדות thumbnail_url, name, embed_url
-        const videoDiv = document.createElement('div');
-        videoDiv.className = 'video';
-        videoDiv.innerHTML = `
-          <img src="${video.thumbnail_url}" alt="${video.name}" />
-          <div class="video-title">${video.name}</div>
-        `;
-        videoDiv.onclick = () => {
-          playerDiv.innerHTML = `
-            <iframe src="${video.embed_url}" allowfullscreen></iframe>
-          `;
-          window.scrollTo({ top: 0, behavior: 'smooth' });
-        };
-        resultsDiv.appendChild(videoDiv);
-      });
-    } catch (error) {
-      resultsDiv.innerHTML = `<p class="message">שגיאה בטעינת התוצאות: ${error.message}</p>`;
-    }
+    data.results.forEach(video => {
+      const div = document.createElement('div');
+      div.className = 'video';
+      div.innerHTML = `
+        <div class="video-title">${video.name}</div>
+        <img src="${video.thumbnail_url}" alt="thumbnail">
+        <iframe src="${video.embed_url}" allowfullscreen></iframe>
+      `;
+      resultsDiv.appendChild(div);
+    });
+  } catch (err) {
+    resultsDiv.innerHTML = 'שגיאה בטעינה: ' + err.message;
   }
+}
 </script>
 
 </body>
