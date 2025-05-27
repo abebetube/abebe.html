@@ -1,40 +1,17 @@
-
 <!DOCTYPE html>
 <html lang="he">
 <head>
   <meta charset="UTF-8">
-  <title>חיפוש דיילימושן</title>
+  <title>ניסיון להטמעת סרטון</title>
 </head>
 <body>
-  <h1>חפש סרטון בדיילימושן</h1>
-  <input id="query" placeholder="הקלד מילות חיפוש">
-  <button onclick="search()">חפש</button>
-  <div id="results"></div>
-
-  <script>
-    async function search() {
-      const q = document.getElementById("query").value;
-      const res = await fetch(`https://api.dailymotion.com/videos?search=${encodeURIComponent(q)}&limit=5`);
-      const data = await res.json();
-
-      const resultsDiv = document.getElementById("results");
-      resultsDiv.innerHTML = "";
-
-      data.list.forEach(video => {
-        const iframe = document.createElement("iframe");
-        iframe.width = "100%";
-        iframe.height = "360";
-        iframe.src = `https://www.dailymotion.com/embed/video/${video.id}`;
-        iframe.frameBorder = 0;
-        iframe.allowFullscreen = true;
-
-        const title = document.createElement("h3");
-        title.textContent = video.title;
-
-        resultsDiv.appendChild(title);
-        resultsDiv.appendChild(iframe);
-      });
-    }
-  </script>
+  <h2>ניסיון להטמיע סרטון עם נקודה אחרי youtube.com</h2>
+  <iframe width="560" height="315"
+    src="https://www.youtube.com./embed/DuB8VUICGqc"
+    title="YouTube video player"
+    frameborder="0"
+    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+    allowfullscreen>
+  </iframe>
 </body>
 </html>
