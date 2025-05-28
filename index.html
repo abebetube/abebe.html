@@ -1,109 +1,108 @@
 <!DOCTYPE html>
-<html lang="he">
+<html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>YouTube Ethiopian Music Player</title>
+  <meta charset="UTF-8">
+  <title>AbeTube</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+  <style>
+    body {
+      scroll-behavior: smooth;
+    }
+  </style>
 </head>
 <body class="bg-gray-100 text-gray-900">
   <div class="container mx-auto p-4">
-    <h1 class="text-3xl font-bold mb-6 text-center">🎶 Ethiopian Music Player</h1>
+    <h1 class="text-4xl font-extrabold text-center mb-6 text-red-600">🎬 AbeTube</h1>
 
-    <!-- נגן עליון -->
-    <div class="aspect-video w-full mb-6">
-      <iframe
-        id="mainPlayer"
-        class="w-full h-full rounded-lg"
-        src=""
-        frameborder="0"
-        allowfullscreen
-        allow="autoplay; encrypted-media"
-      ></iframe>
+    <!-- שורת חיפוש חכמה -->
+    <input id="search" type="text" placeholder="חפש לפי שם..."
+           class="w-full p-3 border border-gray-300 rounded-lg mb-6 text-lg focus:outline-none focus:ring-2 focus:ring-red-400"
+           oninput="filterList()">
+
+    <!-- מסך נגן מעל הרשימה -->
+    <div class="aspect-video w-full mb-8 sticky top-0 z-50 bg-white shadow-xl rounded-lg overflow-hidden">
+      <iframe id="mainPlayer" class="w-full h-full" frameborder="0" allowfullscreen
+              allow="autoplay; encrypted-media"></iframe>
     </div>
 
-    <!-- שורת חיפוש -->
-    <input
-      id="search"
-      type="text"
-      placeholder="חפש לפי שם..."
-      class="w-full p-3 border rounded mb-6 text-lg"
-      oninput="filterList()"
-    />
-
     <!-- רשימת סרטונים -->
-    <div
-      id="videoList"
-      class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
-    ></div>
+    <div id="videoList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
   </div>
 
   <script>
     let videos = [];
+    let currentIndex = 0;
+
+    async function loadCSV() {
+      const res = await fetch("https://raw.githubusercontent.com/abebetube/abebe.html/refs/heads/main/YouTube%20Scraper.csv");
+      const text = await res.text();
+      const rows = text.split('\n').slice(1); // דילוג על כותרת
+      videos = rows.map(row => {
+        const [title, id, , views, date, , , , , duration, thumbnail] = row.split(',');
+        return {
+          title: title?.trim(),
+          url: `https://www.youtube.com/embed/${id.trim()}`,
+          thumbnail: thumbnail?.trim(),
+          views: views?.trim(),
+          date: date?.trim(),
+          id: id.trim(),
+          duration: duration?.trim()
+        };
+      }).filter(v => v.id);
+      renderVideos(videos);
+      playVideo(0); // נגן את הראשון
+    }
 
     function renderVideos(list) {
-      const container = document.getElementById("videoList");
-      container.innerHTML = "";
-      if (list.length === 0) {
-        container.innerHTML = '<p class="text-center col-span-full">לא נמצאו סרטונים.</p>';
-        return;
-      }
-      list.forEach((video) => {
-        // יצירת URL מובנה לנגן (embed)
-        // שים לב: בקובץ שלך יש ID בעמודה 'ID', נשתמש בו:
-        const embedUrl = `https://www.youtube.com/embed/${video.ID}`;
-
+      const container = document.getElementById('videoList');
+      container.innerHTML = '';
+      list.forEach((video, index) => {
         const card = `
-          <div
-            class="bg-white shadow-lg rounded-lg overflow-hidden cursor-pointer hover:shadow-xl transition"
-            onclick="playVideo('${embedUrl}')"
-          >
-            <img
-              src="${video.Thumbnail}"
-              alt="${video.Title}"
-              class="w-full h-48 object-cover"
-            />
+          <div class="bg-white rounded-xl shadow hover:shadow-xl transition cursor-pointer overflow-hidden"
+               onclick="playVideo(${index})">
+            <img src="${video.thumbnail}" alt="${video.title}" class="w-full h-48 object-cover">
             <div class="p-4">
-              <h2 class="text-lg font-bold">${video.Title}</h2>
-              <p class="text-sm text-gray-600">
-                📅 ${video.Date} • 👁️ ${video["View Count"]}
-              </p>
+              <h2 class="text-xl font-semibold text-red-700">${video.title}</h2>
+              <p class="text-sm text-gray-600">📅 ${video.date} • 👁️ ${video.views}</p>
             </div>
-          </div>
-        `;
+          </div>`;
         container.innerHTML += card;
       });
     }
 
-    function playVideo(url) {
-      const player = document.getElementById("mainPlayer");
-      player.src = url + "?autoplay=1";
+    function playVideo(index) {
+      currentIndex = index;
+      const player = document.getElementById('mainPlayer');
+      const video = videos[index];
+      player.src = video.url + "?autoplay=1&enablejsapi=1&rel=0";
     }
 
     function filterList() {
-      const query = document.getElementById("search").value.toLowerCase();
-      const filtered = videos.filter((v) =>
-        v.Title.toLowerCase().includes(query)
-      );
+      const query = document.getElementById('search').value.toLowerCase();
+      const filtered = videos.filter(v => v.title.toLowerCase().includes(query));
       renderVideos(filtered);
     }
 
-    // טעינת CSV מהלינק
-    Papa.parse(
-      "https://raw.githubusercontent.com/abebetube/abebe.html/refs/heads/main/YouTube%20Scraper.csv",
-      {
-        download: true,
-        header: true,
-        complete: function (results) {
-          videos = results.data.filter(v => v.ID && v.Title); // מסננים שורות ריקות
-          renderVideos(videos);
-          if (videos.length > 0) {
-            // מנגן אוטומטית את הסרטון הראשון ברשימה
-            playVideo(`https://www.youtube.com/embed/${videos[0].ID}`);
+    // ניגון אוטומטי הבא
+    window.onYouTubeIframeAPIReady = function() {
+      const player = new YT.Player('mainPlayer', {
+        events: {
+          'onStateChange': (event) => {
+            if (event.data === YT.PlayerState.ENDED) {
+              currentIndex = (currentIndex + 1) % videos.length;
+              playVideo(currentIndex);
+            }
           }
-        },
-      }
-    );
+        }
+      });
+    };
+
+    // טען YouTube Iframe API
+    const tag = document.createElement('script');
+    tag.src = "https://www.youtube.com/iframe_api";
+    document.body.appendChild(tag);
+
+    loadCSV();
   </script>
 </body>
 </html>
