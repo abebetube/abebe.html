@@ -2,95 +2,71 @@
 <html lang="he">
 <head>
   <meta charset="UTF-8" />
-  <title>AbeTube - ללא פרסומות</title>
-  <script src="https://cdn.tailwindcss.com"></script>
+  <title>AbeTube ללא פרסומות</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
     body {
-      scroll-behavior: smooth;
+      font-family: Arial, sans-serif;
+      background: #f3f4f6;
+      margin: 0;
+      padding: 0;
+      text-align: center;
       direction: rtl;
+    }
+    h1 {
+      background: #dc2626;
+      color: white;
+      margin: 0;
+      padding: 1rem;
+    }
+    iframe {
+      width: 100%;
+      max-width: 800px;
+      height: 450px;
+      border: none;
+      margin-top: 1rem;
+    }
+    .video-title {
+      margin: 0.5rem 0;
+      font-size: 1.2rem;
+      color: #333;
     }
   </style>
 </head>
-<body class="bg-gray-100 text-gray-900">
-  <div class="container mx-auto p-4 max-w-6xl">
-    <h1 class="text-4xl font-bold text-center mb-6 text-red-600">🎬 AbeTube – ללא פרסומות</h1>
-
-    <!-- שורת חיפוש -->
-    <input
-      id="search"
-      type="text"
-      placeholder="חפש לפי שם..."
-      class="w-full p-3 border border-gray-300 rounded-lg mb-6 text-lg focus:outline-none focus:ring-2 focus:ring-red-400"
-      oninput="filterList()"
-    />
-
-    <!-- מסך נגינה -->
-    <div id="playerContainer" class="aspect-video w-full rounded-xl bg-black overflow-hidden mb-6">
-      <iframe
-        id="videoPlayer"
-        width="100%"
-        height="100%"
-        frameborder="0"
-        allow="autoplay"
-        allowfullscreen
-        class="w-full h-full"
-        src=""
-      ></iframe>
-    </div>
-
-    <!-- רשימת סרטונים -->
-    <div id="videoList" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4"></div>
+<body>
+  <h1>🎬 AbeTube – צפייה בסרטונים שלך ללא פרסומות</h1>
+  <div id="player-container">
+    <p class="video-title" id="videoTitle">טוען...</p>
+    <iframe id="videoFrame" allowfullscreen></iframe>
   </div>
 
   <script>
-    let videos = [];
+    const videos = [
+      { title: "Video 1", id: "dQw4w9WgXcQ" },
+      { title: "Video 2", id: "kJQP7kiw5Fk" },
+      { title: "Video 3", id: "3JZ_D3ELwOQ" },
+      { title: "Video 4", id: "2Vv-BfVoq4g" },
+      { title: "Video 5", id: "hT_nvWreIhg" }
+    ];
+
     let currentIndex = 0;
-    let filteredVideos = [];
 
-    async function loadCSV() {
-      const res = await fetch("sample_video_list.csv");
-      const text = await res.text();
-      const rows = text.trim().split("\n").slice(1); // שורת כותרת
-      videos = rows.map((row) => {
-        const [title, id] = row.split(",");
-        return {
-          title: title.trim(),
-          id: id.trim(),
-          url: `https://www.youtube-nocookie.com/embed/${id.trim()}?autoplay=1&rel=0&enablejsapi=1&modestbranding=1`,
-        };
-      });
-      filteredVideos = [...videos];
-      renderVideos();
-      if (videos.length > 0) playVideo(0);
+    function playNextVideo() {
+      const video = videos[currentIndex];
+      const iframe = document.getElementById("videoFrame");
+      const title = document.getElementById("videoTitle");
+
+      title.textContent = video.title;
+      iframe.src = `https://piped.video/embed/${video.id}?autoplay=1`;
+
+      currentIndex = (currentIndex + 1) % videos.length;
+
+      // ניגון הבא אחרי סיום (ב-Piped אין API לזיהוי סיום, אז נשתמש בזמן משוער - נניח כל וידאו 3 דקות)
+      setTimeout(playNextVideo, 180000); // 3 דקות
     }
 
-    function renderVideos() {
-      const container = document.getElementById("videoList");
-      container.innerHTML = "";
-      filteredVideos.forEach((video, index) => {
-        container.innerHTML += `
-          <div onclick="playVideo(${index})" class="cursor-pointer bg-white rounded-xl shadow p-2 hover:shadow-lg transition">
-            <img src="https://img.youtube.com/vi/${video.id}/hqdefault.jpg" class="rounded-lg w-full mb-2" alt="${video.title}" />
-            <h2 class="text-lg font-semibold text-red-600">${video.title}</h2>
-          </div>
-        `;
-      });
-    }
-
-    function playVideo(index) {
-      currentIndex = index;
-      const iframe = document.getElementById("videoPlayer");
-      iframe.src = filteredVideos[index].url + `&playlist=${filteredVideos.map(v => v.id).join(",")}`;
-    }
-
-    function filterList() {
-      const query = document.getElementById("search").value.toLowerCase();
-      filteredVideos = videos.filter((v) => v.title.toLowerCase().includes(query));
-      renderVideos();
-      if (filteredVideos.length > 0) playVideo(0);
-    }
-
-    window.onload = loadCSV;
+    // התחלה
+    window.onload = playNextVideo;
   </script>
 </body>
 </html>
