@@ -2,56 +2,96 @@
 <html lang="he">
 <head>
   <meta charset="UTF-8" />
-  <title>רשימת סרטונים - AbeTube</title>
+  <title>צפייה בסרטונים - AbeTube</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
-    body {
-      direction: rtl;
-      scroll-behavior: smooth;
-    }
-    iframe {
-      aspect-ratio: 16 / 9;
-      width: 100%;
-    }
+    body { direction: rtl; }
+    iframe { aspect-ratio: 16 / 9; width: 100%; }
+    .video-item:hover { background-color: #fef2f2; cursor: pointer; }
   </style>
 </head>
 <body class="bg-gray-100 text-gray-900 p-4">
-  <div class="container mx-auto max-w-6xl">
-    <h1 class="text-4xl font-bold text-center text-red-600 mb-6">🎬 רשימת סרטונים</h1>
-    <div id="videos" class="space-y-8"></div>
+
+  <div class="container mx-auto max-w-4xl space-y-6">
+    <h1 class="text-4xl font-bold text-center text-red-600 mb-4">🎬 צפייה בסרטונים</h1>
+
+    <!-- נגן ראשי -->
+    <div id="player" class="bg-white rounded-xl shadow p-4">
+      <h2 id="current-title" class="text-xl font-semibold text-red-700 mb-2">בחר סרטון מהרשימה</h2>
+      <iframe
+        id="video-frame"
+        src=""
+        frameborder="0"
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+        allowfullscreen
+        class="rounded-lg shadow"
+      ></iframe>
+    </div>
+
+    <!-- רשימת סרטונים -->
+    <div id="playlist" class="space-y-4"></div>
   </div>
 
   <script>
-    async function loadCSVandRender() {
+    let videos = [];
+    let currentIndex = 0;
+
+    async function loadCSV() {
       const res = await fetch("https://raw.githubusercontent.com/abebetube/abebe.html/refs/heads/main/YouTube%20Scraper.csv");
       const text = await res.text();
-      const rows = text.split("\n").slice(1); // דילוג על כותרת
-      const videos = rows
-        .map(row => {
-          const [title, id] = row.split(",");
-          if (!id || !title) return null;
-          return {
-            title: title.trim(),
-            id: id.trim()
-          };
-        })
-        .filter(v => v && v.id.length > 0);
+      const rows = text.split("\n").slice(1);
+      videos = rows.map(row => {
+        const [title, id] = row.split(",");
+        if (!title || !id) return null;
+        return { title: title.trim(), id: id.trim() };
+      }).filter(Boolean);
 
-      const container = document.getElementById("videos");
-      container.innerHTML = videos.map(video => `
-        <div class="bg-white shadow rounded-xl p-4">
-          <h2 class="text-xl font-semibold text-red-700 mb-2">${video.title}</h2>
-          <iframe
-            src="https://www.youtube.com/embed/${video.id}?rel=0&modestbranding=1"
-            frameborder="0"
-            allowfullscreen
-            class="rounded-lg shadow"
-          ></iframe>
+      renderPlaylist();
+    }
+
+    function renderPlaylist() {
+      const container = document.getElementById("playlist");
+      container.innerHTML = videos.map((video, i) => `
+        <div onclick="playVideo(${i})" class="video-item p-3 bg-white rounded shadow flex items-center space-x-4">
+          <img src="https://img.youtube.com/vi/${video.id}/default.jpg" alt="thumb" class="w-16 rounded-md" />
+          <span class="text-lg font-medium text-gray-800">${video.title}</span>
         </div>
       `).join("");
     }
 
-    loadCSVandRender();
+    function playVideo(index) {
+      const video = videos[index];
+      currentIndex = index;
+      const iframe = document.getElementById("video-frame");
+      const title = document.getElementById("current-title");
+
+      title.textContent = video.title;
+      iframe.src = `https://www.youtube.com/embed/${video.id}?rel=0&modestbranding=1&autoplay=1&enablejsapi=1`;
+
+      // עוקב אחרי סיום הסרטון
+      setTimeout(() => {
+        postMessageToIframe();
+      }, 1000);
+    }
+
+    // הפעלת YouTube API לזיהוי סוף וידאו
+    function postMessageToIframe() {
+      const iframe = document.getElementById("video-frame").contentWindow;
+      iframe.postMessage('{"event":"listening","id":1}', '*');
+
+      window.addEventListener("message", function onMessage(e) {
+        const data = JSON.parse(e.data);
+        if (data.event === "onStateChange" && data.info === 0) {
+          // ניגון הסתיים - עבור לווידאו הבא
+          window.removeEventListener("message", onMessage);
+          if (currentIndex + 1 < videos.length) {
+            playVideo(currentIndex + 1);
+          }
+        }
+      });
+    }
+
+    loadCSV();
   </script>
 </body>
 </html>
