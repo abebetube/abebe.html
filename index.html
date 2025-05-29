@@ -1,96 +1,152 @@
-<!DOCTYPE html><html lang="he">
+<!DOCTYPE html>
+<html lang="he">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
   <title>AbeTube</title>
+  <script src="https://cdn.tailwindcss.com"></script>
   <style>
     body {
-      margin: 0;
-      font-family: Arial, sans-serif;
-      background-color: #111;
-      color: white;
-    }
-    .splash {
-      position: fixed;
-      background: #111;
-      top: 0; left: 0; right: 0; bottom: 0;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      z-index: 10;
-      animation: fadeOut 1s ease-in-out 2s forwards;
-    }
-    .splash img {
-      width: 200px;
-      animation: rotate 2s linear infinite;
-    }
-    @keyframes rotate {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
-    }
-    @keyframes fadeOut {
-      to { opacity: 0; visibility: hidden; }
-    }
-    header {
-      text-align: center;
-      padding: 1rem;
-    }
-    header img {
-      height: 60px;
-    }
-    .grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-      gap: 1rem;
-      padding: 1rem;
-    }
-    .video-card {
-      background-color: #222;
-      border-radius: 10px;
-      overflow: hidden;
-      text-align: center;
-      padding: 1rem;
-    }
-    iframe {
-      width: 100%;
-      height: 200px;
-      border: none;
-    }
-    .title {
-      margin-top: 0.5rem;
-      font-size: 1rem;
+      scroll-behavior: smooth;
     }
   </style>
 </head>
-<body>
-  <div class="splash">
-    <img src="AbeTube.png" alt="AbeTube Logo">
-  </div>  <header>
-    <img src="AbeTube.png" alt="AbeTube">
-  </header>  <main class="grid" id="videoGrid">
-    <!-- וידאוים יוזנו כאן -->
-  </main>  <script>
-    const sheetURL = "https://opensheet.elk.sh/10-gnEfkWvYLoUuqE3CoDwg0mFz--BXMV2f1phSqcWs8/Sheet1";
+<body class="bg-gray-100 text-gray-900">
+  <div class="container mx-auto p-4 max-w-7xl">
+    <h1 class="text-4xl font-extrabold text-center mb-6 text-red-600">馃幀 AbeTube</h1>
 
-    fetch(sheetURL)
-      .then(res => res.json())
-      .then(data => {
-        const container = document.getElementById("videoGrid");
-        data.forEach(row => {
-          if (row.link) {
-            const videoId = row.link.match(/[-\w]{25,}/);
-            const embedURL = `https://drive.google.com/file/d/${videoId}/preview`;
-            const title = row.title || "סרטון ללא שם";
-            const card = document.createElement("div");
-            card.className = "video-card";
-            card.innerHTML = `
-              <iframe src="${embedURL}" allowfullscreen></iframe>
-              <div class="title">${title}</div>
-            `;
-            container.appendChild(card);
-          }
-        });
+    <!-- 砖讜专转 讞讬驻讜砖 讞讻诪讛 -->
+    <input
+      id="search"
+      type="text"
+      placeholder="讞驻砖 诇驻讬 砖诐..."
+      class="w-full p-3 border border-gray-300 rounded-lg mb-6 text-lg focus:outline-none focus:ring-2 focus:ring-red-400"
+      oninput="filterList()"
+    />
+
+    <!-- 诪住讱 谞讙谉 诪注诇 讛专砖讬诪讛 -->
+    <div
+      class="sticky top-0 z-50 max-w-5xl mx-auto bg-white rounded-2xl shadow-2xl overflow-hidden mb-8 aspect-video max-h-[400px]"
+      style="height: auto;"
+    >
+      <div id="mainPlayer" class="w-full h-full"></div>
+    </div>
+
+    <!-- 专砖讬诪转 住专讟讜谞讬诐 -->
+    <div id="videoList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+  </div>
+
+  <script>
+    let videos = [];
+    let currentIndex = 0;
+    let player;
+    let filteredVideos = [];
+
+    async function loadCSV() {
+      const res = await fetch(
+        "https://raw.githubusercontent.com/abebetube/abebe.html/refs/heads/main/YouTube%20Scraper.csv"
+      );
+      const text = await res.text();
+      const rows = text.split("\n").slice(1);
+      videos = rows
+        .map((row) => {
+          const [title, id, , views, date, , , , , duration, thumbnail] = row.split(",");
+          return {
+            title: title?.trim(),
+            id: id?.trim(),
+            url: `https://www.youtube.com/embed/${id?.trim()}`,
+            thumbnail: thumbnail?.trim(),
+            views: views?.trim(),
+            date: date?.trim(),
+            duration: duration?.trim(),
+          };
+        })
+        .filter((v) => v.id);
+      filteredVideos = videos.slice();
+      renderVideos(filteredVideos);
+      if (filteredVideos.length > 0) {
+        playVideo(0);
+      }
+    }
+
+    function renderVideos(list) {
+      const container = document.getElementById("videoList");
+      container.innerHTML = "";
+      list.forEach((video, index) => {
+        container.innerHTML += `
+          <div
+            class="bg-white rounded-xl shadow hover:shadow-xl transition cursor-pointer overflow-hidden p-0.5 ${
+              currentIndex === index ? "ring-4 ring-red-500" : ""
+            }"
+            onclick="playVideo(${index})"
+            >
+            <img
+              src="${video.thumbnail}"
+              alt="${video.title}"
+              class="w-full h-48 object-cover rounded-lg"
+            />
+            <div class="p-4">
+              <h2 class="text-xl font-semibold text-red-700">${video.title}</h2>
+              <p class="text-sm text-gray-600">馃搮 ${video.date} 鈥?馃憗锔?${video.views}</p>
+            </div>
+          </div>
+        `;
       });
-  </script></body>
-</html>
+    }
+
+    function createPlayer(videoId) {
+      if (player) {
+        player.loadVideoById(videoId);
+      } else {
+        player = new YT.Player("mainPlayer", {
+          videoId: videoId,
+          playerVars: { autoplay: 1, rel: 0 },
+          events: {
+            onReady: (event) => {
+              event.target.playVideo();
+            },
+            onStateChange: onPlayerStateChange,
+            onError: onPlayerError,
+          },
+        });
+      }
+    }
+
+    function playVideo(index) {
+      if (!filteredVideos[index]) return;
+      currentIndex = index;
+      createPlayer(filteredVideos[index].id);
+      renderVideos(filteredVideos);
+      // 讙诇讬诇讛 注讚 诇诪住讱 讛谞讙谉 讘注转 讘讞讬专讛
+      document.getElementById("mainPlayer").scrollIntoView({ behavior: "smooth" });
+    }
+
+    function onPlayerStateChange(event) {
+      if (event.data === YT.PlayerState.ENDED) {
+        currentIndex = (currentIndex + 1) % filteredVideos.length;
+        playVideo(currentIndex);
+      }
+    }
+
+    function onPlayerError(event) {
+      console.warn("砖讙讬讗讛 讘谞讬讙讜谉, 注讜讘专 诇住专讟讜谉 讛讘讗...", event.data);
+      currentIndex = (currentIndex + 1) % filteredVideos.length;
+      playVideo(currentIndex);
+    }
+
+    function filterList() {
+      const query = document.getElementById("search").value.toLowerCase();
+      filteredVideos = videos.filter((v) => v.title.toLowerCase().includes(query));
+      currentIndex = 0;
+      renderVideos(filteredVideos);
+      if (filteredVideos.length > 0) {
+        playVideo(0);
+      } else {
+        if (player) player.stopVideo();
+        document.getElementById("mainPlayer").innerHTML = "";
+      }
+    }
+
+    // 讟注讬谞转 API YouTube
+    const tag = document.createElement("script");
+    tag.src = "https://www.youtube.com/iframe_api";
+    document.body.appendChild(tag);
