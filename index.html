@@ -2,65 +2,106 @@
 <html lang="he">
 <head>
   <meta charset="UTF-8" />
-  <title>נגן אישי - AbeTube</title>
+  <title>נגן AbeTube עם נגינה רציפה</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
     body {
       font-family: Arial, sans-serif;
-      text-align: center;
       direction: rtl;
-      background: #f4f4f4;
-      margin: 0;
+      margin: 0; padding: 1rem;
+      background: #f9f9f9;
+      text-align: center;
     }
     h1 {
-      background: #d32f2f;
-      color: white;
-      padding: 1rem;
+      color: #b71c1c;
     }
-    iframe {
+    #player {
+      margin: 1rem auto;
       width: 90%;
-      max-width: 800px;
-      height: 450px;
-      border: none;
-      margin-top: 1rem;
+      max-width: 720px;
+      aspect-ratio: 16 / 9;
     }
-    .video-title {
-      margin: 1rem 0 0.5rem;
+    #title {
+      margin-top: 0.5rem;
+      font-weight: bold;
       font-size: 1.2rem;
-      color: #222;
+      color: #333;
     }
   </style>
 </head>
 <body>
-  <h1>AbeTube 🎬 נגן אישי ללא פרסומות</h1>
-  <div id="player-container">
-    <p class="video-title" id="videoTitle">טוען סרטון...</p>
-    <iframe id="videoFrame" allowfullscreen></iframe>
-  </div>
 
-  <script>
-    const videos = [
-      { title: "מסיבת יום הולדת", id: "3fumBcKC6RE" },
-      { title: "טיול בצפון", id: "xm3YgoEiEDc" },
-      { title: "איך לבנות מחשב", id: "DxL0QRGtZDw" },
-      { title: "טיפים למשכנתא", id: "KHZnrR-zQms" },
-      { title: "מתכון לשקשוקה", id: "ptOQ2JP3oQM" }
-    ];
+<h1>נגן AbeTube - נגינה רציפה</h1>
+<div id="player"></div>
+<div id="title">טוען...</div>
 
-    let currentIndex = 0;
+<script>
+  // רשימת הסרטונים שלך
+  const videos = [
+    { title: "מסיבת יום הולדת", id: "3fumBcKC6RE" },
+    { title: "טיול בצפון", id: "xm3YgoEiEDc" },
+    { title: "איך לבנות מחשב", id: "DxL0QRGtZDw" },
+    { title: "טיפים למשכנתא", id: "KHZnrR-zQms" },
+    { title: "מתכון לשקשוקה", id: "ptOQ2JP3oQM" }
+  ];
 
-    function playNextVideo() {
-      const current = videos[currentIndex];
-      document.getElementById("videoTitle").textContent = current.title;
-      document.getElementById("videoFrame").src = `https://piped.video/embed/${current.id}?autoplay=1`;
+  let currentIndex = 0;
+  let player;
 
-      currentIndex = (currentIndex + 1) % videos.length;
+  // טוען את ספריית YouTube Iframe API
+  var tag = document.createElement('script');
+  tag.src = "https://www.youtube.com/iframe_api";
+  var firstScriptTag = document.getElementsByTagName('script')[0];
+  firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
 
-      // הערכת זמן סיום - 3 דקות לסרטון
-      setTimeout(playNextVideo, 3 * 60 * 1000);
+  // פונקציה שנקראת כשהספריה טעונה
+  function onYouTubeIframeAPIReady() {
+    player = new YT.Player('player', {
+      height: '360',
+      width: '640',
+      videoId: videos[currentIndex].id,
+      events: {
+        'onReady': onPlayerReady,
+        'onStateChange': onPlayerStateChange,
+        'onError': onPlayerError
+      },
+      playerVars: {
+        'autoplay': 1,
+        'controls': 1,
+        'rel': 0,
+        'modestbranding': 1
+      }
+    });
+    updateTitle();
+  }
+
+  function onPlayerReady(event) {
+    event.target.playVideo();
+  }
+
+  function onPlayerStateChange(event) {
+    // כשהסרטון מסתיים (YT.PlayerState.ENDED = 0)
+    if (event.data === YT.PlayerState.ENDED) {
+      playNextVideo();
     }
+  }
 
-    window.onload = playNextVideo;
-  </script>
+  function onPlayerError(event) {
+    console.warn('שגיאה בניגון, עובר לסרטון הבא:', event.data);
+    playNextVideo();
+  }
+
+  function playNextVideo() {
+    currentIndex++;
+    if (currentIndex >= videos.length) currentIndex = 0;
+    player.loadVideoById(videos[currentIndex].id);
+    updateTitle();
+  }
+
+  function updateTitle() {
+    document.getElementById('title').textContent = videos[currentIndex].title;
+  }
+</script>
+
 </body>
 </html>
