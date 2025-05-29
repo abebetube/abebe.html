@@ -2,106 +2,56 @@
 <html lang="he">
 <head>
   <meta charset="UTF-8" />
-  <title>נגן AbeTube עם נגינה רציפה</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>רשימת סרטונים - AbeTube</title>
+  <script src="https://cdn.tailwindcss.com"></script>
   <style>
     body {
-      font-family: Arial, sans-serif;
       direction: rtl;
-      margin: 0; padding: 1rem;
-      background: #f9f9f9;
-      text-align: center;
+      scroll-behavior: smooth;
     }
-    h1 {
-      color: #b71c1c;
-    }
-    #player {
-      margin: 1rem auto;
-      width: 90%;
-      max-width: 720px;
+    iframe {
       aspect-ratio: 16 / 9;
-    }
-    #title {
-      margin-top: 0.5rem;
-      font-weight: bold;
-      font-size: 1.2rem;
-      color: #333;
+      width: 100%;
     }
   </style>
 </head>
-<body>
+<body class="bg-gray-100 text-gray-900 p-4">
+  <div class="container mx-auto max-w-6xl">
+    <h1 class="text-4xl font-bold text-center text-red-600 mb-6">🎬 רשימת סרטונים</h1>
+    <div id="videos" class="space-y-8"></div>
+  </div>
 
-<h1>נגן AbeTube - נגינה רציפה</h1>
-<div id="player"></div>
-<div id="title">טוען...</div>
+  <script>
+    async function loadCSVandRender() {
+      const res = await fetch("https://raw.githubusercontent.com/abebetube/abebe.html/refs/heads/main/YouTube%20Scraper.csv");
+      const text = await res.text();
+      const rows = text.split("\n").slice(1); // דילוג על כותרת
+      const videos = rows
+        .map(row => {
+          const [title, id] = row.split(",");
+          if (!id || !title) return null;
+          return {
+            title: title.trim(),
+            id: id.trim()
+          };
+        })
+        .filter(v => v && v.id.length > 0);
 
-<script>
-  // רשימת הסרטונים שלך
-  const videos = [
-    { title: "מסיבת יום הולדת", id: "3fumBcKC6RE" },
-    { title: "טיול בצפון", id: "xm3YgoEiEDc" },
-    { title: "איך לבנות מחשב", id: "DxL0QRGtZDw" },
-    { title: "טיפים למשכנתא", id: "KHZnrR-zQms" },
-    { title: "מתכון לשקשוקה", id: "ptOQ2JP3oQM" }
-  ];
-
-  let currentIndex = 0;
-  let player;
-
-  // טוען את ספריית YouTube Iframe API
-  var tag = document.createElement('script');
-  tag.src = "https://www.youtube.com/iframe_api";
-  var firstScriptTag = document.getElementsByTagName('script')[0];
-  firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
-
-  // פונקציה שנקראת כשהספריה טעונה
-  function onYouTubeIframeAPIReady() {
-    player = new YT.Player('player', {
-      height: '360',
-      width: '640',
-      videoId: videos[currentIndex].id,
-      events: {
-        'onReady': onPlayerReady,
-        'onStateChange': onPlayerStateChange,
-        'onError': onPlayerError
-      },
-      playerVars: {
-        'autoplay': 1,
-        'controls': 1,
-        'rel': 0,
-        'modestbranding': 1
-      }
-    });
-    updateTitle();
-  }
-
-  function onPlayerReady(event) {
-    event.target.playVideo();
-  }
-
-  function onPlayerStateChange(event) {
-    // כשהסרטון מסתיים (YT.PlayerState.ENDED = 0)
-    if (event.data === YT.PlayerState.ENDED) {
-      playNextVideo();
+      const container = document.getElementById("videos");
+      container.innerHTML = videos.map(video => `
+        <div class="bg-white shadow rounded-xl p-4">
+          <h2 class="text-xl font-semibold text-red-700 mb-2">${video.title}</h2>
+          <iframe
+            src="https://www.youtube.com/embed/${video.id}?rel=0&modestbranding=1"
+            frameborder="0"
+            allowfullscreen
+            class="rounded-lg shadow"
+          ></iframe>
+        </div>
+      `).join("");
     }
-  }
 
-  function onPlayerError(event) {
-    console.warn('שגיאה בניגון, עובר לסרטון הבא:', event.data);
-    playNextVideo();
-  }
-
-  function playNextVideo() {
-    currentIndex++;
-    if (currentIndex >= videos.length) currentIndex = 0;
-    player.loadVideoById(videos[currentIndex].id);
-    updateTitle();
-  }
-
-  function updateTitle() {
-    document.getElementById('title').textContent = videos[currentIndex].title;
-  }
-</script>
-
+    loadCSVandRender();
+  </script>
 </body>
 </html>
