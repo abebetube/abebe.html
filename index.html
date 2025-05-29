@@ -2,70 +2,64 @@
 <html lang="he">
 <head>
   <meta charset="UTF-8" />
-  <title>AbeTube ללא פרסומות</title>
+  <title>נגן אישי - AbeTube</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
     body {
       font-family: Arial, sans-serif;
-      background: #f3f4f6;
-      margin: 0;
-      padding: 0;
       text-align: center;
       direction: rtl;
+      background: #f4f4f4;
+      margin: 0;
     }
     h1 {
-      background: #dc2626;
+      background: #d32f2f;
       color: white;
-      margin: 0;
       padding: 1rem;
     }
     iframe {
-      width: 100%;
+      width: 90%;
       max-width: 800px;
       height: 450px;
       border: none;
       margin-top: 1rem;
     }
     .video-title {
-      margin: 0.5rem 0;
+      margin: 1rem 0 0.5rem;
       font-size: 1.2rem;
-      color: #333;
+      color: #222;
     }
   </style>
 </head>
 <body>
-  <h1>🎬 AbeTube – צפייה בסרטונים שלך ללא פרסומות</h1>
+  <h1>AbeTube 🎬 נגן אישי ללא פרסומות</h1>
   <div id="player-container">
-    <p class="video-title" id="videoTitle">טוען...</p>
+    <p class="video-title" id="videoTitle">טוען סרטון...</p>
     <iframe id="videoFrame" allowfullscreen></iframe>
   </div>
 
   <script>
     const videos = [
-      { title: "Video 1", id: "dQw4w9WgXcQ" },
-      { title: "Video 2", id: "kJQP7kiw5Fk" },
-      { title: "Video 3", id: "3JZ_D3ELwOQ" },
-      { title: "Video 4", id: "2Vv-BfVoq4g" },
-      { title: "Video 5", id: "hT_nvWreIhg" }
+      { title: "מסיבת יום הולדת", id: "3fumBcKC6RE" },
+      { title: "טיול בצפון", id: "xm3YgoEiEDc" },
+      { title: "איך לבנות מחשב", id: "DxL0QRGtZDw" },
+      { title: "טיפים למשכנתא", id: "KHZnrR-zQms" },
+      { title: "מתכון לשקשוקה", id: "ptOQ2JP3oQM" }
     ];
 
     let currentIndex = 0;
 
     function playNextVideo() {
-      const video = videos[currentIndex];
-      const iframe = document.getElementById("videoFrame");
-      const title = document.getElementById("videoTitle");
-
-      title.textContent = video.title;
-      iframe.src = `https://piped.video/embed/${video.id}?autoplay=1`;
+      const current = videos[currentIndex];
+      document.getElementById("videoTitle").textContent = current.title;
+      document.getElementById("videoFrame").src = `https://piped.video/embed/${current.id}?autoplay=1`;
 
       currentIndex = (currentIndex + 1) % videos.length;
 
-      // ניגון הבא אחרי סיום (ב-Piped אין API לזיהוי סיום, אז נשתמש בזמן משוער - נניח כל וידאו 3 דקות)
-      setTimeout(playNextVideo, 180000); // 3 דקות
+      // הערכת זמן סיום - 3 דקות לסרטון
+      setTimeout(playNextVideo, 3 * 60 * 1000);
     }
 
-    // התחלה
     window.onload = playNextVideo;
   </script>
 </body>
