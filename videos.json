@@ -5,7 +5,34 @@
     "hasSubtitles": false,
     "is360": false,
     "is3D": false,
-    "is4K": false,
+    "is4K": false,import { ApifyClient } from 'apify-client';
+
+// Initialize the ApifyClient with API token
+const client = new ApifyClient({
+    token: '<YOUR_API_TOKEN>',
+});
+
+// Prepare Actor input
+const input = {
+    "queries": [
+        "iphone",
+        "samsung galaxy"
+    ],
+    "maxPagesPerQuery": 1,
+    "languageCode": ""
+};
+
+(async () => {
+    // Run the Actor and wait for it to finish
+    const run = await client.actor("2X4gHXZ52rBqmkBXt").call(input);
+
+    // Fetch and print Actor results from the run's dataset (if any)
+    console.log('Results from dataset');
+    const { items } = await client.dataset(run.defaultDatasetId).listItems();
+    items.forEach((item) => {
+        console.dir(item);
+    });
+})();
     "isBought": false,
     "isHD": false,
     "isHDR": false,
