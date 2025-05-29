@@ -1,97 +1,96 @@
-<!DOCTYPE html>
-<html lang="he">
+<!DOCTYPE html><html lang="he">
 <head>
-  <meta charset="UTF-8" />
-  <title>צפייה בסרטונים - AbeTube</title>
-  <script src="https://cdn.tailwindcss.com"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AbeTube</title>
   <style>
-    body { direction: rtl; }
-    iframe { aspect-ratio: 16 / 9; width: 100%; }
-    .video-item:hover { background-color: #fef2f2; cursor: pointer; }
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background-color: #111;
+      color: white;
+    }
+    .splash {
+      position: fixed;
+      background: #111;
+      top: 0; left: 0; right: 0; bottom: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 10;
+      animation: fadeOut 1s ease-in-out 2s forwards;
+    }
+    .splash img {
+      width: 200px;
+      animation: rotate 2s linear infinite;
+    }
+    @keyframes rotate {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    @keyframes fadeOut {
+      to { opacity: 0; visibility: hidden; }
+    }
+    header {
+      text-align: center;
+      padding: 1rem;
+    }
+    header img {
+      height: 60px;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 1rem;
+      padding: 1rem;
+    }
+    .video-card {
+      background-color: #222;
+      border-radius: 10px;
+      overflow: hidden;
+      text-align: center;
+      padding: 1rem;
+    }
+    iframe {
+      width: 100%;
+      height: 200px;
+      border: none;
+    }
+    .title {
+      margin-top: 0.5rem;
+      font-size: 1rem;
+    }
   </style>
 </head>
-<body class="bg-gray-100 text-gray-900 p-4">
+<body>
+  <div class="splash">
+    <img src="AbeTube.png" alt="AbeTube Logo">
+  </div>  <header>
+    <img src="AbeTube.png" alt="AbeTube">
+  </header>  <main class="grid" id="videoGrid">
+    <!-- וידאוים יוזנו כאן -->
+  </main>  <script>
+    const sheetURL = "https://opensheet.elk.sh/10-gnEfkWvYLoUuqE3CoDwg0mFz--BXMV2f1phSqcWs8/Sheet1";
 
-  <div class="container mx-auto max-w-4xl space-y-6">
-    <h1 class="text-4xl font-bold text-center text-red-600 mb-4">🎬 צפייה בסרטונים</h1>
-
-    <!-- נגן ראשי -->
-    <div id="player" class="bg-white rounded-xl shadow p-4">
-      <h2 id="current-title" class="text-xl font-semibold text-red-700 mb-2">בחר סרטון מהרשימה</h2>
-      <iframe
-        id="video-frame"
-        src=""
-        frameborder="0"
-        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-        allowfullscreen
-        class="rounded-lg shadow"
-      ></iframe>
-    </div>
-
-    <!-- רשימת סרטונים -->
-    <div id="playlist" class="space-y-4"></div>
-  </div>
-
-  <script>
-    let videos = [];
-    let currentIndex = 0;
-
-    async function loadCSV() {
-      const res = await fetch("https://raw.githubusercontent.com/abebetube/abebe.html/refs/heads/main/YouTube%20Scraper.csv");
-      const text = await res.text();
-      const rows = text.split("\n").slice(1);
-      videos = rows.map(row => {
-        const [title, id] = row.split(",");
-        if (!title || !id) return null;
-        return { title: title.trim(), id: id.trim() };
-      }).filter(Boolean);
-
-      renderPlaylist();
-    }
-
-    function renderPlaylist() {
-      const container = document.getElementById("playlist");
-      container.innerHTML = videos.map((video, i) => `
-        <div onclick="playVideo(${i})" class="video-item p-3 bg-white rounded shadow flex items-center space-x-4">
-          <img src="https://img.youtube.com/vi/${video.id}/default.jpg" alt="thumb" class="w-16 rounded-md" />
-          <span class="text-lg font-medium text-gray-800">${video.title}</span>
-        </div>
-      `).join("");
-    }
-
-    function playVideo(index) {
-      const video = videos[index];
-      currentIndex = index;
-      const iframe = document.getElementById("video-frame");
-      const title = document.getElementById("current-title");
-
-      title.textContent = video.title;
-      iframe.src = `https://www.youtube.com/embed/${video.id}?rel=0&modestbranding=1&autoplay=1&enablejsapi=1`;
-
-      // עוקב אחרי סיום הסרטון
-      setTimeout(() => {
-        postMessageToIframe();
-      }, 1000);
-    }
-
-    // הפעלת YouTube API לזיהוי סוף וידאו
-    function postMessageToIframe() {
-      const iframe = document.getElementById("video-frame").contentWindow;
-      iframe.postMessage('{"event":"listening","id":1}', '*');
-
-      window.addEventListener("message", function onMessage(e) {
-        const data = JSON.parse(e.data);
-        if (data.event === "onStateChange" && data.info === 0) {
-          // ניגון הסתיים - עבור לווידאו הבא
-          window.removeEventListener("message", onMessage);
-          if (currentIndex + 1 < videos.length) {
-            playVideo(currentIndex + 1);
+    fetch(sheetURL)
+      .then(res => res.json())
+      .then(data => {
+        const container = document.getElementById("videoGrid");
+        data.forEach(row => {
+          if (row.link) {
+            const videoId = row.link.match(/[-\w]{25,}/);
+            const embedURL = `https://drive.google.com/file/d/${videoId}/preview`;
+            const title = row.title || "סרטון ללא שם";
+            const card = document.createElement("div");
+            card.className = "video-card";
+            card.innerHTML = `
+              <iframe src="${embedURL}" allowfullscreen></iframe>
+              <div class="title">${title}</div>
+            `;
+            container.appendChild(card);
           }
-        }
+        });
       });
-    }
-
-    loadCSV();
-  </script>
-</body>
+  </script></body>
 </html>
