@@ -1,29 +1,15 @@
+
 <!DOCTYPE html>
 <html lang="he">
 <head>
   <meta charset="UTF-8" />
-  <title>AbeTube - ניגון אוטומטי</title>
+  <title>AbeTube - ללא פרסומות</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
     body {
       scroll-behavior: smooth;
     }
-    /* עיצוב מסך הנגן */
-    #playerContainer {
-      position: sticky;
-      top: 0;
-      z-index: 50;
-      background: white;
-      box-shadow: 0 4px 8px rgb(0 0 0 / 0.1);
-      border-radius: 0.5rem;
-      overflow: hidden;
-      max-height: 360px;
-      height: 100vw;
-      max-width: 640px;
-      margin: auto;
-    }
-    /* יחס רוחב/גובה 16:9 */
-    #mainPlayer {
+    iframe {
       width: 100%;
       height: 100%;
     }
@@ -31,9 +17,9 @@
 </head>
 <body class="bg-gray-100 text-gray-900">
   <div class="container mx-auto p-4 max-w-7xl">
-    <h1 class="text-4xl font-extrabold text-center mb-6 text-red-600">🎬 AbeTube</h1>
+    <h1 class="text-4xl font-extrabold text-center mb-6 text-red-600">🎬 AbeTube - בלי פרסומות</h1>
 
-    <!-- שורת חיפוש חכמה -->
+    <!-- שורת חיפוש -->
     <input
       id="search"
       type="text"
@@ -42,41 +28,35 @@
       oninput="filterList()"
     />
 
-    <!-- מסך נגן מעל הרשימה -->
-    <div id="playerContainer">
-      <div id="mainPlayer"></div>
+    <!-- מסך נגן -->
+    <div class="aspect-video mb-6 rounded-xl overflow-hidden shadow-lg bg-black">
+      <iframe id="mainPlayer" src="" frameborder="0" allowfullscreen></iframe>
     </div>
 
     <!-- רשימת סרטונים -->
-    <div id="videoList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-6"></div>
+    <div id="videoList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
   </div>
 
   <script>
     let videos = [];
     let currentIndex = 0;
-    let player;
     let filteredVideos = [];
 
     async function loadCSV() {
-      const res = await fetch(
-        "https://raw.githubusercontent.com/abebetube/abebe.html/refs/heads/main/YouTube%20Scraper.csv"
-      );
+      const res = await fetch("https://raw.githubusercontent.com/abebetube/abebe.html/main/YouTube%20Scraper.csv");
       const text = await res.text();
-      const rows = text.split("\n").slice(1); // דילוג על שורת הכותרת
-      videos = rows
-        .map((row) => {
-          const [title, id, , views, date, , , , , duration, thumbnail] = row.split(",");
-          return {
-            title: title?.trim(),
-            id: id?.trim(),
-            url: `https://www.youtube-nocookie.com/embed/${id?.trim()}`,
-            thumbnail: thumbnail?.trim(),
-            views: views?.trim(),
-            date: date?.trim(),
-            duration: duration?.trim(),
-          };
-        })
-        .filter((v) => v.id);
+      const rows = text.split("\n").slice(1);
+      videos = rows.map(row => {
+        const [title, id, , views, date, , , , , duration, thumbnail] = row.split(",");
+        return {
+          title: title?.trim(),
+          id: id?.trim(),
+          thumbnail: thumbnail?.trim(),
+          views: views?.trim(),
+          date: date?.trim(),
+          duration: duration?.trim(),
+        };
+      }).filter(v => v.id);
       filteredVideos = videos.slice();
       renderVideos(filteredVideos);
       if (filteredVideos.length > 0) {
@@ -90,11 +70,9 @@
       list.forEach((video, index) => {
         container.innerHTML += `
           <div
-            class="bg-white rounded-xl shadow hover:shadow-xl transition cursor-pointer overflow-hidden p-0.5 ${
-              currentIndex === index ? "ring-4 ring-red-500" : ""
-            }"
+            class="bg-white rounded-xl shadow hover:shadow-xl transition cursor-pointer overflow-hidden p-0.5"
             onclick="playVideo(${index})"
-            >
+          >
             <img
               src="${video.thumbnail}"
               alt="${video.title}"
@@ -109,43 +87,13 @@
       });
     }
 
-    function createPlayer(videoId) {
-      if (player) {
-        player.loadVideoById(videoId);
-      } else {
-        player = new YT.Player("mainPlayer", {
-          videoId: videoId,
-          playerVars: { autoplay: 1, rel: 0 },
-          events: {
-            onReady: (event) => {
-              event.target.playVideo();
-            },
-            onStateChange: onPlayerStateChange,
-            onError: onPlayerError,
-          },
-        });
-      }
-    }
-
     function playVideo(index) {
       if (!filteredVideos[index]) return;
       currentIndex = index;
-      createPlayer(filteredVideos[index].id);
-      renderVideos(filteredVideos);
-    }
-
-    function onPlayerStateChange(event) {
-      if (event.data === YT.PlayerState.ENDED) {
-        // ניגון אוטומטי של הסרטון הבא ברשימה (לולאה)
-        currentIndex = (currentIndex + 1) % filteredVideos.length;
-        playVideo(currentIndex);
-      }
-    }
-
-    function onPlayerError(event) {
-      console.warn("שגיאה בניגון, עובר לסרטון הבא...", event.data);
-      currentIndex = (currentIndex + 1) % filteredVideos.length;
-      playVideo(currentIndex);
+      const id = filteredVideos[index].id;
+      // שימוש ב-Invidious כדי להימנע מפרסומות
+      const invidiousUrl = `https://www.youtube-nocookie.com/embed/${id}?rel=0&autoplay=1`;
+      document.getElementById("mainPlayer").src = invidiousUrl;
     }
 
     function filterList() {
@@ -156,19 +104,11 @@
       if (filteredVideos.length > 0) {
         playVideo(0);
       } else {
-        if (player) player.stopVideo();
-        document.getElementById("mainPlayer").innerHTML = "";
+        document.getElementById("mainPlayer").src = "";
       }
     }
 
-    // טעינת API YouTube
-    const tag = document.createElement("script");
-    tag.src = "https://www.youtube.com/iframe_api";
-    document.body.appendChild(tag);
-
-    window.onYouTubeIframeAPIReady = () => {
-      loadCSV();
-    };
+    window.onload = loadCSV;
   </script>
 </body>
 </html>
