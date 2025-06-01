@@ -43,7 +43,8 @@
 
     async function loadCSV() {
       const res = await fetch(
-        "https://raw.githubusercontent.com/abebetube/abebe.html/refs/heads/main/YouTube%20Scraper.csv"
+"https://raw.githubusercontent.com/abebetube/abebe.html/main/youtube-search.json
+"
       );
       const text = await res.text();
       const rows = text.split("\n").slice(1);
