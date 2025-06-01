@@ -12,18 +12,16 @@
 </head>
 <body class="bg-gray-100 text-gray-900">
   <div class="container mx-auto p-4 max-w-7xl">
-    <h1 class="text-4xl font-extrabold text-center mb-6 text-red-600">馃幀 AbeTube</h1>
+    <h1 class="text-4xl font-extrabold text-center mb-6 text-red-600">🎞️ AbeTube</h1>
 
-    <!-- 砖讜专转 讞讬驻讜砖 讞讻诪讛 -->
     <input
       id="search"
       type="text"
-      placeholder="讞驻砖 诇驻讬 砖诐..."
+      placeholder="חפש סרטון..."
       class="w-full p-3 border border-gray-300 rounded-lg mb-6 text-lg focus:outline-none focus:ring-2 focus:ring-red-400"
       oninput="filterList()"
     />
 
-    <!-- 诪住讱 谞讙谉 诪注诇 讛专砖讬诪讛 -->
     <div
       class="sticky top-0 z-50 max-w-5xl mx-auto bg-white rounded-2xl shadow-2xl overflow-hidden mb-8 aspect-video max-h-[400px]"
       style="height: auto;"
@@ -31,7 +29,6 @@
       <div id="mainPlayer" class="w-full h-full"></div>
     </div>
 
-    <!-- 专砖讬诪转 住专讟讜谞讬诐 -->
     <div id="videoList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
   </div>
 
@@ -41,31 +38,26 @@
     let player;
     let filteredVideos = [];
 
-    async function loadCSV() {
-      const res = await fetch(
-"https://raw.githubusercontent.com/abebetube/abebe.html/main/youtube-search.json
-"
-      );
-      const text = await res.text();
-      const rows = text.split("\n").slice(1);
-      videos = rows
-        .map((row) => {
-          const [title, id, , views, date, , , , , duration, thumbnail] = row.split(",");
-          return {
-            title: title?.trim(),
-            id: id?.trim(),
-            url: `https://www.youtube.com/embed/${id?.trim()}`,
-            thumbnail: thumbnail?.trim(),
-            views: views?.trim(),
-            date: date?.trim(),
-            duration: duration?.trim(),
-          };
-        })
-        .filter((v) => v.id);
-      filteredVideos = videos.slice();
-      renderVideos(filteredVideos);
-      if (filteredVideos.length > 0) {
-        playVideo(0);
+    async function loadJSON() {
+      try {
+        const res = await fetch("https://raw.githubusercontent.com/abebetube/abebe.html/main/youtube-search.json");
+        const data = await res.json();
+        videos = data.map((video) => ({
+          title: video.title,
+          id: video.id,
+          url: `https://www.youtube.com/embed/${video.id}`,
+          thumbnail: video.thumbnail,
+          views: video.views,
+          date: video.date,
+          duration: video.duration,
+        }));
+        filteredVideos = videos.slice();
+        renderVideos(filteredVideos);
+        if (filteredVideos.length > 0) {
+          playVideo(0);
+        }
+      } catch (error) {
+        console.error("שגיאה בטעינת הנתונים:", error);
       }
     }
 
@@ -87,7 +79,7 @@
             />
             <div class="p-4">
               <h2 class="text-xl font-semibold text-red-700">${video.title}</h2>
-              <p class="text-sm text-gray-600">馃搮 ${video.date} 鈥?馃憗锔?${video.views}</p>
+              <p class="text-sm text-gray-600">📅 ${video.date} • 👁️ ${video.views}</p>
             </div>
           </div>
         `;
@@ -117,7 +109,6 @@
       currentIndex = index;
       createPlayer(filteredVideos[index].id);
       renderVideos(filteredVideos);
-      // 讙诇讬诇讛 注讚 诇诪住讱 讛谞讙谉 讘注转 讘讞讬专讛
       document.getElementById("mainPlayer").scrollIntoView({ behavior: "smooth" });
     }
 
@@ -129,7 +120,7 @@
     }
 
     function onPlayerError(event) {
-      console.warn("砖讙讬讗讛 讘谞讬讙讜谉, 注讜讘专 诇住专讟讜谉 讛讘讗...", event.data);
+      console.warn("אירעה שגיאה בניגון, עוברים לסרטון הבא...", event.data);
       currentIndex = (currentIndex + 1) % filteredVideos.length;
       playVideo(currentIndex);
     }
@@ -147,13 +138,12 @@
       }
     }
 
-    // 讟注讬谞转 API YouTube
     const tag = document.createElement("script");
     tag.src = "https://www.youtube.com/iframe_api";
     document.body.appendChild(tag);
 
     window.onYouTubeIframeAPIReady = () => {
-      loadCSV();
+      loadJSON();
     };
   </script>
 </body>
