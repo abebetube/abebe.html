@@ -2,149 +2,80 @@
 <html lang="he">
 <head>
   <meta charset="UTF-8" />
-  <title>AbeTube</title>
-  <script src="https://cdn.tailwindcss.com"></script>
+  <title>AbeTube - נגן YouTube ללא פרסומות</title>
   <style>
     body {
-      scroll-behavior: smooth;
+      font-family: Arial, sans-serif;
+      text-align: center;
+      background-color: #f9f9f9;
+      padding: 20px;
+    }
+    input {
+      padding: 10px;
+      width: 300px;
+      font-size: 16px;
+    }
+    button {
+      padding: 10px 20px;
+      font-size: 16px;
+      margin-right: 10px;
+    }
+    iframe {
+      margin-top: 20px;
+      width: 560px;
+      height: 315px;
+      border: none;
+      border-radius: 12px;
     }
   </style>
 </head>
-<body class="bg-gray-100 text-gray-900">
-  <div class="container mx-auto p-4 max-w-7xl">
-    <h1 class="text-4xl font-extrabold text-center mb-6 text-red-600">🎞️ AbeTube</h1>
-
-    <input
-      id="search"
-      type="text"
-      placeholder="חפש סרטון..."
-      class="w-full p-3 border border-gray-300 rounded-lg mb-6 text-lg focus:outline-none focus:ring-2 focus:ring-red-400"
-      oninput="filterList()"
-    />
-
-    <div
-      class="sticky top-0 z-50 max-w-5xl mx-auto bg-white rounded-2xl shadow-2xl overflow-hidden mb-8 aspect-video max-h-[400px]"
-      style="height: auto;"
-    >
-      <div id="mainPlayer" class="w-full h-full"></div>
-    </div>
-
-    <div id="videoList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
-  </div>
+<body>
+  <h1>AbeTube - נגן YouTube ללא פרסומות</h1>
+  <input id="search" placeholder="הכנס מילת חיפוש או כתובת..." />
+  <button onclick="searchVideo()">חפש והפעל</button>
+  <div id="player"></div>
 
   <script>
-    let videos = [];
-    let currentIndex = 0;
-    let player;
-    let filteredVideos = [];
+    const API_KEY = "AIzaSyCKWg2Po9gpQTx2-SSadDOouTB04jBFAAU"; // החלף במפתח ה-API שלך
 
-    async function loadJSON() {
-      try {
-        const res = await fetch("https://raw.githubusercontent.com/abebetube/abebe.html/main/youtube-search.json");
-        const data = await res.json();
-        videos = data.map((video) => ({
-          title: video.title,
-          id: video.id,
-          url: `https://www.youtube.com/embed/${video.id}`,
-          thumbnail: video.thumbnail,
-          views: video.views,
-          date: video.date,
-          duration: video.duration,
-        }));
-        filteredVideos = videos.slice();
-        renderVideos(filteredVideos);
-        if (filteredVideos.length > 0) {
-          playVideo(0);
+    async function searchVideo() {
+      const query = document.getElementById("search").value.trim();
+      if (!query) return;
+
+      let videoId = "";
+
+      if (query.includes("youtube.com") || query.includes("youtu.be")) {
+        // אם זה קישור מלא
+        const match = query.match(/(?:v=|\/)([0-9A-Za-z_-]{11})/);
+        videoId = match ? match[1] : "";
+      } else {
+        // חיפוש דרך YouTube Data API
+        const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(query)}&type=video&key=${API_KEY}&maxResults=1`;
+
+        try {
+          const res = await fetch(url);
+          const data = await res.json();
+          if (!data.items || data.items.length === 0) {
+            alert("לא נמצאו תוצאות.");
+            return;
+          }
+          videoId = data.items[0].id.videoId;
+        } catch (error) {
+          alert("שגיאה בחיפוש הסרטון.");
+          return;
         }
-      } catch (error) {
-        console.error("שגיאה בטעינת הנתונים:", error);
       }
-    }
 
-    function renderVideos(list) {
-      const container = document.getElementById("videoList");
-      container.innerHTML = "";
-      list.forEach((video, index) => {
-        container.innerHTML += `
-          <div
-            class="bg-white rounded-xl shadow hover:shadow-xl transition cursor-pointer overflow-hidden p-0.5 ${
-              currentIndex === index ? "ring-4 ring-red-500" : ""
-            }"
-            onclick="playVideo(${index})"
-            >
-            <img
-              src="${video.thumbnail}"
-              alt="${video.title}"
-              class="w-full h-48 object-cover rounded-lg"
-            />
-            <div class="p-4">
-              <h2 class="text-xl font-semibold text-red-700">${video.title}</h2>
-              <p class="text-sm text-gray-600">📅 ${video.date} • 👁️ ${video.views}</p>
-            </div>
-          </div>
-        `;
-      });
-    }
-
-    function createPlayer(videoId) {
-      if (player) {
-        player.loadVideoById(videoId);
-      } else {
-        player = new YT.Player("mainPlayer", {
-          videoId: videoId,
-          playerVars: { autoplay: 1, rel: 0 },
-          events: {
-            onReady: (event) => {
-              event.target.playVideo();
-            },
-            onStateChange: onPlayerStateChange,
-            onError: onPlayerError,
-          },
-        });
+      if (!videoId) {
+        alert("לא נמצא מזהה סרטון.");
+        return;
       }
+
+      const iframe = `<iframe src="https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&modestbranding=1&rel=0"
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>`;
+
+      document.getElementById("player").innerHTML = iframe;
     }
-
-    function playVideo(index) {
-      if (!filteredVideos[index]) return;
-      currentIndex = index;
-      createPlayer(filteredVideos[index].id);
-      renderVideos(filteredVideos);
-      document.getElementById("mainPlayer").scrollIntoView({ behavior: "smooth" });
-    }
-
-    function onPlayerStateChange(event) {
-      if (event.data === YT.PlayerState.ENDED) {
-        currentIndex = (currentIndex + 1) % filteredVideos.length;
-        playVideo(currentIndex);
-      }
-    }
-
-    function onPlayerError(event) {
-      console.warn("אירעה שגיאה בניגון, עוברים לסרטון הבא...", event.data);
-      currentIndex = (currentIndex + 1) % filteredVideos.length;
-      playVideo(currentIndex);
-    }
-
-    function filterList() {
-      const query = document.getElementById("search").value.toLowerCase();
-      filteredVideos = videos.filter((v) => v.title.toLowerCase().includes(query));
-      currentIndex = 0;
-      renderVideos(filteredVideos);
-      if (filteredVideos.length > 0) {
-        playVideo(0);
-      } else {
-        if (player) player.stopVideo();
-        document.getElementById("mainPlayer").innerHTML = "";
-      }
-    }
-
-    const tag = document.createElement("script");
-    tag.src = "https://www.youtube.com/iframe_api";
-    document.body.appendChild(tag);
-
-    window.onYouTubeIframeAPIReady = () => {
-      loadJSON();
-    };
   </script>
 </body>
 </html>
