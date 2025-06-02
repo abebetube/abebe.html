@@ -1,111 +1,134 @@
 <!DOCTYPE html>
-<html lang="he">
+<html lang="he" dir="rtl">
 <head>
-  <meta charset="UTF-8" />
-  <title>AbeTube - נגן YouTube ללא פרסומות</title>
+  <meta charset="UTF-8">
+  <title>AbeTube</title>
   <style>
     body {
-      font-family: Arial, sans-serif;
-      direction: rtl;
-      background: #f0f0f0;
+      font-family: 'Segoe UI', sans-serif;
+      background: #f9f9f9;
       margin: 0;
       padding: 0;
+      color: #333;
     }
+
     header {
-      background: #ff3b3f;
+      background-color: #d62828;
       color: white;
-      padding: 20px;
       text-align: center;
-      font-size: 24px;
-    }
-    .container {
       padding: 20px;
-      max-width: 900px;
-      margin: auto;
+      font-size: 24px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
     }
-    .search-area {
+
+    .container {
+      max-width: 1000px;
+      margin: auto;
+      padding: 20px;
+    }
+
+    .search-box {
       display: flex;
       flex-direction: column;
       align-items: center;
+      gap: 10px;
     }
-    input {
+
+    input[type="text"] {
       padding: 10px;
-      width: 90%;
-      max-width: 400px;
       font-size: 16px;
-      margin-bottom: 10px;
+      width: 100%;
+      max-width: 400px;
       border-radius: 8px;
       border: 1px solid #ccc;
     }
+
     button {
       padding: 10px 20px;
       font-size: 16px;
-      background: #ff3b3f;
+      background-color: #d62828;
       color: white;
       border: none;
       border-radius: 8px;
       cursor: pointer;
+      transition: background 0.2s ease;
     }
+
+    button:hover {
+      background-color: #b71c1c;
+    }
+
+    #player-container {
+      margin-top: 30px;
+      text-align: center;
+    }
+
     iframe {
       width: 100%;
       max-width: 800px;
       height: 450px;
-      margin-top: 20px;
-      border: none;
       border-radius: 12px;
+      border: none;
     }
+
     #results {
       display: flex;
       flex-wrap: wrap;
+      gap: 15px;
       justify-content: center;
       margin-top: 30px;
-      gap: 12px;
     }
-    .result-item {
-      cursor: pointer;
-      padding: 10px;
+
+    .video-item {
       width: 180px;
-      background-color: white;
+      background: white;
       border-radius: 10px;
-      box-shadow: 0 0 5px rgba(0,0,0,0.1);
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      cursor: pointer;
+      overflow: hidden;
       transition: transform 0.2s ease;
     }
-    .result-item:hover {
+
+    .video-item:hover {
       transform: scale(1.05);
     }
-    .result-item img {
+
+    .video-item img {
       width: 100%;
-      border-radius: 6px;
-    }
-    .result-item span {
       display: block;
-      margin-top: 6px;
+    }
+
+    .video-title {
       font-size: 14px;
+      padding: 8px;
       color: #333;
     }
+
     @media (max-width: 600px) {
       iframe {
         height: 250px;
       }
-      .result-item {
+
+      .video-item {
         width: 45%;
       }
     }
   </style>
 </head>
 <body>
-  <header>AbeTube - נגן YouTube ללא פרסומות</header>
+  <header>AbeTube - נגן יוטיוב ללא פרסומות</header>
   <div class="container">
-    <div class="search-area">
-      <input id="search" placeholder="הכנס מילת חיפוש או כתובת..." />
-      <button onclick="searchVideo()">חפש</button>
+    <div class="search-box">
+      <input id="searchInput" type="text" placeholder="הקלד מילת חיפוש או קישור ל-YouTube">
+      <button onclick="searchVideos()">חפש</button>
     </div>
-    <div id="player"></div>
+
+    <div id="player-container"></div>
     <div id="results"></div>
   </div>
 
   <script>
-    const API_KEY = "AIzaSyCKWg2Po9gpQTx2-SSadDOouTB04jBFAAU"; // המפתח שלך
+    const API_KEY = "AIzaSyCKWg2Po9gpQTx2-SSadDOouTB04jBFAAU";
     let playlist = [];
     let currentIndex = 0;
 
@@ -113,150 +136,143 @@
       loadFromCache();
     };
 
-    document.getElementById("search").addEventListener("keydown", function(e) {
-      if (e.key === "Enter") searchVideo();
+    document.getElementById("searchInput").addEventListener("keydown", e => {
+      if (e.key === "Enter") searchVideos();
     });
 
-    async function searchVideo() {
-      const query = document.getElementById("search").value.trim();
+    async function searchVideos() {
+      const query = document.getElementById("searchInput").value.trim();
       if (!query) return;
 
-      document.getElementById("results").innerHTML = "";
-      document.getElementById("player").innerHTML = "";
       playlist = [];
+      currentIndex = 0;
+      document.getElementById("results").innerHTML = "";
+      document.getElementById("player-container").innerHTML = "";
 
       const isURL = query.includes("youtube.com") || query.includes("youtu.be");
       if (isURL) {
         const match = query.match(/(?:v=|\/)([0-9A-Za-z_-]{11})/);
         const videoId = match ? match[1] : "";
-        const isPlayable = await checkEmbeddable(videoId);
-        if (isPlayable) {
-          playlist = [{ videoId, title: "סרטון יחיד", thumb: "" }];
-          currentIndex = 0;
-          saveToCache();
-          showPlayerAndNext();
-        } else {
-          alert("לא ניתן לנגן את הסרטון הזה.");
+        if (videoId) {
+          const isPlayable = await checkEmbeddable(videoId);
+          if (isPlayable) {
+            playlist = [{ videoId, title: "סרטון שהוזן", thumb: "" }];
+            currentIndex = 0;
+            saveToCache();
+            playVideo(currentIndex);
+          }
         }
         return;
       }
 
-      const searchUrl = `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(query)}&type=video&key=${API_KEY}&maxResults=40`;
+      const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(query)}&type=video&key=${API_KEY}&maxResults=10`;
 
       try {
-        const res = await fetch(searchUrl);
+        const res = await fetch(url);
         const data = await res.json();
+
         for (const item of data.items) {
-          const vidId = item.id.videoId;
-          const isPlayable = await checkEmbeddable(vidId);
-          if (!isPlayable) continue;
+          const vid = item.id.videoId;
+          const playable = await checkEmbeddable(vid);
+          if (!playable) continue;
           playlist.push({
-            videoId: vidId,
+            videoId: vid,
             title: item.snippet.title,
             thumb: item.snippet.thumbnails.medium.url
           });
         }
 
         if (playlist.length === 0) {
-          alert("לא נמצאו סרטונים שניתן לנגן.");
+          alert("לא נמצאו סרטונים ניתנים לניגון");
           return;
         }
 
         currentIndex = 0;
         saveToCache();
-        showPlayerAndNext();
+        playVideo(currentIndex);
 
-      } catch (error) {
-        console.error(error);
-        alert("שגיאה בחיפוש הסרטון.");
+      } catch (e) {
+        console.error("שגיאת חיפוש:", e);
       }
     }
 
-    function showPlayerAndNext() {
-      const video = playlist[currentIndex];
+    function playVideo(index) {
+      const video = playlist[index];
       if (!video) return;
 
-      document.getElementById("player").innerHTML = `
-        <iframe id="videoPlayer" src="https://www.youtube-nocookie.com/embed/${video.videoId}?autoplay=1&rel=0&modestbranding=1&enablejsapi=1" 
-          allow="autoplay; encrypted-media" allowfullscreen></iframe>
+      document.getElementById("player-container").innerHTML = `
+        <iframe id="ytplayer" src="https://www.youtube-nocookie.com/embed/${video.videoId}?autoplay=1&enablejsapi=1&rel=0&modestbranding=1" allowfullscreen allow="autoplay"></iframe>
       `;
 
       const resultsDiv = document.getElementById("results");
       resultsDiv.innerHTML = "";
-      playlist.forEach((vid, index) => {
-        if (index === currentIndex) return;
+
+      playlist.forEach((v, i) => {
+        if (i === index) return;
         const div = document.createElement("div");
-        div.className = "result-item";
+        div.className = "video-item";
         div.onclick = () => {
-          currentIndex = index;
+          currentIndex = i;
           saveToCache();
-          showPlayerAndNext();
+          playVideo(i);
         };
         div.innerHTML = `
-          <img src="${vid.thumb}" alt="${vid.title}">
-          <span>${vid.title}</span>
+          <img src="${v.thumb}" alt="${v.title}">
+          <div class="video-title">${v.title}</div>
         `;
         resultsDiv.appendChild(div);
       });
 
-      saveToCache();
-      setupAutoNext(video.videoId);
+      setTimeout(() => {
+        setupPlayerEvents();
+      }, 1000);
     }
 
-    function setupAutoNext(videoId) {
-      const playerFrame = document.querySelector("#videoPlayer");
-      if (!playerFrame) return;
+    function setupPlayerEvents() {
+      if (typeof YT === "undefined" || typeof YT.Player === "undefined") return;
 
-      // מאפשר גישה ל-YouTube Iframe API
-      playerFrame.onload = () => {
-        const ytPlayer = new YT.Player('videoPlayer', {
-          events: {
-            'onStateChange': (e) => {
-              if (e.data === YT.PlayerState.ENDED) {
-                playNext();
+      new YT.Player("ytplayer", {
+        events: {
+          'onStateChange': (e) => {
+            if (e.data === YT.PlayerState.ENDED) {
+              if (currentIndex + 1 < playlist.length) {
+                currentIndex++;
+                saveToCache();
+                playVideo(currentIndex);
               }
             }
           }
-        });
-      };
+        }
+      });
     }
 
-    function playNext() {
-      if (currentIndex + 1 < playlist.length) {
-        currentIndex++;
-        saveToCache();
-        showPlayerAndNext();
-      }
-    }
-
-    async function checkEmbeddable(videoId) {
-      const checkUrl = `https://www.googleapis.com/youtube/v3/videos?part=status&id=${videoId}&key=${API_KEY}`;
+    async function checkEmbeddable(id) {
+      const url = `https://www.googleapis.com/youtube/v3/videos?part=status&id=${id}&key=${API_KEY}`;
       try {
-        const res = await fetch(checkUrl);
+        const res = await fetch(url);
         const data = await res.json();
         return data.items?.[0]?.status?.embeddable ?? false;
-      } catch (e) {
-        console.error("שגיאה בבדיקת embeddable:", e);
+      } catch {
         return false;
       }
     }
 
     function saveToCache() {
       localStorage.setItem("abe_playlist", JSON.stringify(playlist));
-      localStorage.setItem("abe_currentIndex", currentIndex);
+      localStorage.setItem("abe_index", currentIndex);
     }
 
     function loadFromCache() {
-      const cachedList = localStorage.getItem("abe_playlist");
-      const cachedIndex = localStorage.getItem("abe_currentIndex");
-      if (cachedList && cachedIndex !== null) {
-        playlist = JSON.parse(cachedList);
-        currentIndex = parseInt(cachedIndex);
-        showPlayerAndNext();
+      const list = localStorage.getItem("abe_playlist");
+      const idx = localStorage.getItem("abe_index");
+      if (list && idx !== null) {
+        playlist = JSON.parse(list);
+        currentIndex = parseInt(idx);
+        playVideo(currentIndex);
       }
     }
 
-    // טען YouTube iframe API
+    // Load YouTube Iframe API
     const tag = document.createElement('script');
     tag.src = "https://www.youtube.com/iframe_api";
     document.head.appendChild(tag);
