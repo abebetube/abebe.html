@@ -9,6 +9,7 @@
       text-align: center;
       background-color: #f9f9f9;
       padding: 20px;
+      direction: rtl;
     }
     input {
       padding: 10px;
@@ -27,30 +28,53 @@
       border: none;
       border-radius: 12px;
     }
+    .video-list {
+      margin-top: 30px;
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 20px;
+    }
+    .video-item {
+      width: 200px;
+      cursor: pointer;
+      text-align: right;
+    }
+    .video-item img {
+      width: 100%;
+      border-radius: 10px;
+    }
+    .video-item p {
+      font-size: 14px;
+      margin: 5px 0 0 0;
+    }
   </style>
 </head>
 <body>
   <h1>AbeTube - נגן YouTube ללא פרסומות</h1>
   <input id="search" placeholder="הכנס מילת חיפוש או כתובת..." />
-  <button onclick="searchVideo()">חפש והפעל</button>
+  <button onclick="searchVideo()">חפש</button>
   <div id="player"></div>
+  <div class="video-list" id="results"></div>
 
   <script>
-    const API_KEY = "AIzaSyCKWg2Po9gpQTx2-SSadDOouTB04jBFAAU"; // החלף במפתח ה-API שלך
+    const API_KEY = "AIzaSyCKWg2Po9gpQTx2-SSadDOouTB04jBFAAU"; // מפתח API
 
     async function searchVideo() {
       const query = document.getElementById("search").value.trim();
-      if (!query) return;
+      const resultsDiv = document.getElementById("results");
+      resultsDiv.innerHTML = "";
 
       let videoId = "";
 
       if (query.includes("youtube.com") || query.includes("youtu.be")) {
-        // אם זה קישור מלא
+        // קישור ישיר
         const match = query.match(/(?:v=|\/)([0-9A-Za-z_-]{11})/);
         videoId = match ? match[1] : "";
+        playVideo(videoId);
       } else {
-        // חיפוש דרך YouTube Data API
-        const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(query)}&type=video&key=${API_KEY}&maxResults=1`;
+        // חיפוש
+        const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(query)}&type=video&key=${API_KEY}&maxResults=5`;
 
         try {
           const res = await fetch(url);
@@ -59,21 +83,36 @@
             alert("לא נמצאו תוצאות.");
             return;
           }
+
+          // הפעל את הראשון
           videoId = data.items[0].id.videoId;
+          playVideo(videoId);
+
+          // הצגת רשימה
+          data.items.forEach(item => {
+            const thumb = item.snippet.thumbnails.medium.url;
+            const title = item.snippet.title;
+            const id = item.id.videoId;
+
+            const div = document.createElement("div");
+            div.className = "video-item";
+            div.innerHTML = `
+              <img src="${thumb}" alt="${title}" />
+              <p>${title}</p>
+            `;
+            div.onclick = () => playVideo(id);
+            resultsDiv.appendChild(div);
+          });
+
         } catch (error) {
           alert("שגיאה בחיפוש הסרטון.");
-          return;
         }
       }
+    }
 
-      if (!videoId) {
-        alert("לא נמצא מזהה סרטון.");
-        return;
-      }
-
+    function playVideo(videoId) {
       const iframe = `<iframe src="https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&modestbranding=1&rel=0"
         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>`;
-
       document.getElementById("player").innerHTML = iframe;
     }
   </script>
