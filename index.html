@@ -1,4 +1,5 @@
-<!DOCTYPE html><html lang="he" dir="rtl">
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
 <head>
   <meta charset="UTF-8">
   <title>AbeTube</title>
@@ -9,115 +10,109 @@
       margin: 0;
       padding: 0;
       color: #333;
-    }header {
-  background-color: #d62828;
-  color: white;
-  text-align: center;
-  padding: 20px;
-  font-size: 24px;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-}
+    }
 
-.container {
-  max-width: 1000px;
-  margin: auto;
-  padding: 20px;
-}
+    header {
+      background-color: #d62828;
+      color: white;
+      text-align: center;
+      padding: 20px;
+      font-size: 24px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
 
-.search-box {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 10px;
-}
+    .container {
+      max-width: 1000px;
+      margin: auto;
+      padding: 20px;
+    }
 
-input[type="text"] {
-  padding: 10px;
-  font-size: 16px;
-  width: 100%;
-  max-width: 400px;
-  border-radius: 8px;
-  border: 1px solid #ccc;
-}
+    .search-box {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+    }
 
-button {
-  padding: 10px 20px;
-  font-size: 16px;
-  background-color: #d62828;
-  color: white;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: background 0.2s ease;
-}
+    input[type="text"] {
+      padding: 10px;
+      font-size: 16px;
+      width: 100%;
+      max-width: 400px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+    }
 
-button:hover {
-  background-color: #b71c1c;
-}
+    button {
+      padding: 10px 20px;
+      font-size: 16px;
+      background-color: #d62828;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.2s ease;
+    }
 
-.controls {
-  margin-top: 15px;
-  display: flex;
-  justify-content: center;
-  gap: 15px;
-}
+    button:hover {
+      background-color: #b71c1c;
+    }
 
-#player-container {
-  margin-top: 30px;
-  text-align: center;
-}
+    #player-container {
+      margin-top: 30px;
+      text-align: center;
+    }
 
-iframe {
-  width: 100%;
-  max-width: 800px;
-  height: 450px;
-  border-radius: 12px;
-  border: none;
-}
+    iframe {
+      width: 100%;
+      max-width: 800px;
+      height: 450px;
+      border-radius: 12px;
+      border: none;
+    }
 
-#results {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 15px;
-  justify-content: center;
-  margin-top: 30px;
-}
+    #results {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 15px;
+      justify-content: center;
+      margin-top: 30px;
+    }
 
-.video-item {
-  width: 180px;
-  background: white;
-  border-radius: 10px;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-  cursor: pointer;
-  overflow: hidden;
-  transition: transform 0.2s ease;
-}
+    .video-item {
+      width: 180px;
+      background: white;
+      border-radius: 10px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      cursor: pointer;
+      overflow: hidden;
+      transition: transform 0.2s ease;
+    }
 
-.video-item:hover {
-  transform: scale(1.05);
-}
+    .video-item:hover {
+      transform: scale(1.05);
+    }
 
-.video-item img {
-  width: 100%;
-  display: block;
-}
+    .video-item img {
+      width: 100%;
+      display: block;
+    }
 
-.video-title {
-  font-size: 14px;
-  padding: 8px;
-  color: #333;
-}
+    .video-title {
+      font-size: 14px;
+      padding: 8px;
+      color: #333;
+    }
 
-@media (max-width: 600px) {
-  iframe {
-    height: 250px;
-  }
+    @media (max-width: 600px) {
+      iframe {
+        height: 250px;
+      }
 
-  .video-item {
-    width: 45%;
-  }
-}
-
+      .video-item {
+        width: 45%;
+      }
+    }
   </style>
 </head>
 <body>
@@ -126,21 +121,16 @@ iframe {
     <div class="search-box">
       <input id="searchInput" type="text" placeholder="הקלד מילת חיפוש או קישור ל-YouTube">
       <button onclick="searchVideos()">חפש</button>
-    </div><div class="controls">
-  <button onclick="togglePlayPause()">הפעל / עצור</button>
-  <button onclick="toggleLoop()">לולאה</button>
-  <button onclick="nextVideo()">הבא</button>
-</div>
+    </div>
 
-<div id="player-container"></div>
-<div id="results"></div>
+    <div id="player-container"></div>
+    <div id="results"></div>
+  </div>
 
-  </div>  <script>
+  <script>
     const API_KEY = "AIzaSyCKWg2Po9gpQTx2-SSadDOouTB04jBFAAU";
     let playlist = [];
     let currentIndex = 0;
-    let player;
-    let loopEnabled = false;
 
     window.onload = () => {
       loadFromCache();
@@ -175,7 +165,7 @@ iframe {
         return;
       }
 
-      const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(query)}&type=video&key=${API_KEY}&maxResults=25`;
+      const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(query)}&type=video&key=${API_KEY}&maxResults=30`;
 
       try {
         const res = await fetch(url);
@@ -211,7 +201,7 @@ iframe {
       if (!video) return;
 
       document.getElementById("player-container").innerHTML = `
-        <div id="ytplayer"></div>
+        <iframe id="ytplayer" src="https://www.youtube-nocookie.com/embed/${video.videoId}?autoplay=1&enablejsapi=1&rel=0&modestbranding=1" allowfullscreen allow="autoplay"></iframe>
       `;
 
       const resultsDiv = document.getElementById("results");
@@ -233,23 +223,19 @@ iframe {
         resultsDiv.appendChild(div);
       });
 
-      if (player) player.destroy();
+      setTimeout(() => {
+        setupPlayerEvents();
+      }, 1000);
+    }
 
-      player = new YT.Player("ytplayer", {
-        height: "450",
-        width: "800",
-        videoId: video.videoId,
-        playerVars: {
-          autoplay: 1,
-          rel: 0,
-          modestbranding: 1
-        },
+    function setupPlayerEvents() {
+      if (typeof YT === "undefined" || typeof YT.Player === "undefined") return;
+
+      new YT.Player("ytplayer", {
         events: {
           'onStateChange': (e) => {
             if (e.data === YT.PlayerState.ENDED) {
-              if (loopEnabled) {
-                playVideo(currentIndex);
-              } else if (currentIndex + 1 < playlist.length) {
+              if (currentIndex + 1 < playlist.length) {
                 currentIndex++;
                 saveToCache();
                 playVideo(currentIndex);
@@ -258,27 +244,6 @@ iframe {
           }
         }
       });
-    }
-
-    function togglePlayPause() {
-      if (player) {
-        const state = player.getPlayerState();
-        if (state === YT.PlayerState.PLAYING) player.pauseVideo();
-        else if (state === YT.PlayerState.PAUSED || state === YT.PlayerState.ENDED) player.playVideo();
-      }
-    }
-
-    function toggleLoop() {
-      loopEnabled = !loopEnabled;
-      alert(loopEnabled ? "מצב לולאה מופעל" : "מצב לולאה מבוטל");
-    }
-
-    function nextVideo() {
-      if (currentIndex + 1 < playlist.length) {
-        currentIndex++;
-        saveToCache();
-        playVideo(currentIndex);
-      }
     }
 
     async function checkEmbeddable(id) {
@@ -307,8 +272,11 @@ iframe {
       }
     }
 
+    // Load YouTube Iframe API
     const tag = document.createElement('script');
     tag.src = "https://www.youtube.com/iframe_api";
     document.head.appendChild(tag);
-  </script></body>
+  </script>
+</body>
 </html>
+
