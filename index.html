@@ -7,7 +7,7 @@
     body {
       font-family: Arial, sans-serif;
       text-align: center;
-      background-color: #f9f9f9;
+      background-color: #f0f0f0;
       padding: 20px;
       direction: rtl;
     }
@@ -20,6 +20,7 @@
       padding: 10px 20px;
       font-size: 16px;
       margin-right: 10px;
+      cursor: pointer;
     }
     iframe {
       margin-top: 20px;
@@ -28,85 +29,105 @@
       border: none;
       border-radius: 12px;
     }
-    .video-list {
-      margin-top: 30px;
+    #results {
       display: flex;
-      justify-content: center;
       flex-wrap: wrap;
-      gap: 20px;
+      justify-content: center;
+      margin-top: 20px;
+      gap: 10px;
     }
-    .video-item {
-      width: 200px;
+    .result-item {
       cursor: pointer;
-      text-align: right;
-    }
-    .video-item img {
-      width: 100%;
+      padding: 8px;
+      width: 180px;
+      background-color: white;
       border-radius: 10px;
+      box-shadow: 0 0 5px rgba(0,0,0,0.1);
+      transition: transform 0.2s ease;
     }
-    .video-item p {
+    .result-item:hover {
+      transform: scale(1.05);
+    }
+    .result-item img {
+      width: 100%;
+      border-radius: 6px;
+    }
+    .result-item span {
+      display: block;
+      margin-top: 6px;
       font-size: 14px;
-      margin: 5px 0 0 0;
+      color: #333;
     }
   </style>
 </head>
 <body>
   <h1>AbeTube - נגן YouTube ללא פרסומות</h1>
   <input id="search" placeholder="הכנס מילת חיפוש או כתובת..." />
-  <button onclick="searchVideo()">חפש</button>
+  <button onclick="searchVideo()">חפש והפעל</button>
   <div id="player"></div>
-  <div class="video-list" id="results"></div>
+  <div id="results"></div>
 
   <script>
-    const API_KEY = "AIzaSyCKWg2Po9gpQTx2-SSadDOouTB04jBFAAU"; // מפתח API
+    const API_KEY = "AIzaSyCKWg2Po9gpQTx2-SSadDOouTB04jBFAAU"; // המפתח שלך
 
     async function searchVideo() {
       const query = document.getElementById("search").value.trim();
-      const resultsDiv = document.getElementById("results");
-      resultsDiv.innerHTML = "";
+      if (!query) return;
 
-      let videoId = "";
+      document.getElementById("results").innerHTML = "";
+      document.getElementById("player").innerHTML = "";
 
       if (query.includes("youtube.com") || query.includes("youtu.be")) {
-        // קישור ישיר
         const match = query.match(/(?:v=|\/)([0-9A-Za-z_-]{11})/);
-        videoId = match ? match[1] : "";
-        playVideo(videoId);
-      } else {
-        // חיפוש
-        const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(query)}&type=video&key=${API_KEY}&maxResults=25`;
+        const videoId = match ? match[1] : "";
+        const isPlayable = await checkEmbeddable(videoId);
+        if (isPlayable) playVideo(videoId);
+        else alert("לא ניתן לנגן את הסרטון הזה.");
+        return;
+      }
 
-        try {
-          const res = await fetch(url);
-          const data = await res.json();
-          if (!data.items || data.items.length === 0) {
-            alert("לא נמצאו תוצאות.");
-            return;
+      const searchUrl = `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(query)}&type=video&key=${API_KEY}&maxResults=20`;
+
+      try {
+        const res = await fetch(searchUrl);
+        const data = await res.json();
+        if (!data.items || data.items.length === 0) {
+          alert("לא נמצאו תוצאות.");
+          return;
+        }
+
+        let firstPlayableFound = false;
+
+        for (const item of data.items) {
+          const vidId = item.id.videoId;
+          const title = item.snippet.title;
+          const thumb = item.snippet.thumbnails.default.url;
+
+          const isPlayable = await checkEmbeddable(vidId);
+          if (!isPlayable) continue;
+
+          if (!firstPlayableFound) {
+            playVideo(vidId);
+            firstPlayableFound = true;
           }
 
-          // הפעל את הראשון
-          videoId = data.items[0].id.videoId;
-          playVideo(videoId);
-
-          // הצגת רשימה
-          data.items.forEach(item => {
-            const thumb = item.snippet.thumbnails.medium.url;
-            const title = item.snippet.title;
-            const id = item.id.videoId;
-
-            const div = document.createElement("div");
-            div.className = "video-item";
-            div.innerHTML = `
-              <img src="${thumb}" alt="${title}" />
-              <p>${title}</p>
-            `;
-            div.onclick = () => playVideo(id);
-            resultsDiv.appendChild(div);
-          });
-
-        } catch (error) {
-          alert("שגיאה בחיפוש הסרטון.");
+          const div = document.createElement("div");
+          div.className = "result-item";
+          div.onclick = () => playVideo(vidId);
+          div.innerHTML = `
+            <img src="${thumb}" alt="${title}">
+            <span>${title}</span>
+          `;
+          document.getElementById("results").appendChild(div);
         }
+
+        if (!firstPlayableFound) {
+          alert("לא נמצאו סרטונים שניתן לנגן.");
+        }
+
+      } catch (error) {
+        console.error(error);
+        alert("שגיאה בחיפוש הסרטון.");
       }
     }
 
@@ -114,6 +135,25 @@
       const iframe = `<iframe src="https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&modestbranding=1&rel=0"
         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>`;
       document.getElementById("player").innerHTML = iframe;
+    }
+
+    async function checkEmbeddable(videoId) {
+      const checkUrl = `https://www.googleapis.com/youtube/v3/videos?part=status&id=${videoId}&key=${API_KEY}`;
+      try {
+        const res = await fetch(checkUrl);
+        const data = await res.json();
+        if (
+          data.items &&
+          data.items[0] &&
+          data.items[0].status &&
+          data.items[0].status.embeddable
+        ) {
+          return true;
+        }
+      } catch (e) {
+        console.error("שגיאה בבדיקת embeddable:", e);
+      }
+      return false;
     }
   </script>
 </body>
