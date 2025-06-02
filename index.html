@@ -74,7 +74,7 @@
         playVideo(videoId);
       } else {
         // חיפוש
-        const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(query)}&type=video&key=${API_KEY}&maxResults=5`;
+        const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(query)}&type=video&key=${API_KEY}&maxResults=25`;
 
         try {
           const res = await fetch(url);
