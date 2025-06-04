@@ -190,7 +190,7 @@
   }
 } 
   </style>
-  <link rel="icon" type="image/png" href="ic_newpipe_triangle_white.png">
+  <link rel="icon" type="image/png" href=logo.png">
 </head>
 <body>
   <header>AbeTube - נגן יוטיוב ללא פרסומות</header>
@@ -205,7 +205,7 @@
   </div>
 <div id="splash">
   <div class="logo-area">
-    <img src="ic_newpipe_triangle_white.png" alt="logo">
+    <img src="logo.png" alt="logo">
     <h1 class="title">AbeTube</h1>
     <div class="spotlights">
       <div class="beam beam-left"></div>
@@ -219,7 +219,7 @@
     setTimeout(() => {
       const splash = document.getElementById("splash");
       splash.style.display = "none";
-    }, 3000); // אחרי 3 שניות
+    }, 4000); // אחרי 3 שניות
   });
 
 
@@ -297,9 +297,12 @@
       if (!video) return;
 
       document.getElementById("player-container").innerHTML = `
-        <iframe id="ytplayer" src="https://www.youtube-nocookie.com/embed/${video.videoId}?autoplay=1&enablejsapi=1&rel=0&modestbranding=1" allowfullscreen allow="autoplay"></iframe>
+        <iframe id="ytplayer" src="https://www.youtube-nocookie.com/embed/${video.videoId}?autoplay=1&enablejsapi=1&rel=0&modestbranding=1"
+		allowfullscreen allow="autoplay"></iframe>
       `;
-
+	  setTimeout(() => {
+    document.getElementById("player-container").scrollIntoView({ behavior: "smooth", block: "start" });
+  }, 500);
       const resultsDiv = document.getElementById("results");
       resultsDiv.innerHTML = "";
 
@@ -322,6 +325,7 @@
       setTimeout(() => {
         setupPlayerEvents();
       }, 1000);
+	 
     }
 
     function setupPlayerEvents() {
@@ -375,4 +379,3 @@
   </script>
 </body>
 </html>
-
