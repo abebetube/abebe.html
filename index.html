@@ -17,6 +17,7 @@
     .video-info { padding: 10px; }
     .video-title { font-size: 16px; font-weight: bold; }
     .video-desc { font-size: 14px; color: #555; max-height: 50px; overflow: hidden; }
+    #player-container { margin-top: 20px; text-align: center; }
   </style>
 </head>
 <body>
@@ -27,12 +28,45 @@
   <input type="text" id="query" placeholder="הקלד מילות חיפוש...">
   <button onclick="searchYouTube()">חפש</button>
 
+  <div id="player-container">
+    <div id="player" style="display:none;"></div>
+  </div>
+
   <div class="video-list" id="results"></div>
 </main>
 
-<script>
-  const apiKey = 'AIzaSyCKWg2Po9gpQTx2-SSadDOouTB04jBFAAU'; // שים כאן את המפתח שלך
+<!-- טעינת ה־YouTube Iframe API -->
+<script src="https://www.youtube.com/iframe_api"></script>
 
+<script>
+  const apiKey = 'AIzaSyCKWg2Po9gpQTx2-SSadDOouTB04jBFAAU'; // מפתח API שלך
+  let player;
+
+  // פונקציה שנקראת אוטומטית כשה־API מוכן
+  function onYouTubeIframeAPIReady() {
+    player = new YT.Player('player', {
+      height: '360',
+      width: '640',
+      videoId: '',
+      events: {
+        'onStateChange': onPlayerStateChange
+      }
+    });
+  }
+
+  // זיהוי אם יש פרסומת (בערך בלבד)
+  function onPlayerStateChange(event) {
+    if (event.data === YT.PlayerState.PLAYING) {
+      const duration = player.getDuration();
+      const videoData = player.getVideoData();
+
+      if (duration < 15 && (!videoData.title || videoData.title.toLowerCase().includes("ad"))) {
+        alert("🚨 זוהה פרסום 🚨");
+      }
+    }
+  }
+
+  // חיפוש סרטונים
   function searchYouTube() {
     const query = document.getElementById('query').value;
     const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&maxResults=8&q=${encodeURIComponent(query)}&key=${apiKey}`;
@@ -59,8 +93,8 @@
             </div>
           `;
           div.onclick = () => {
-            // פתיחת מסך נגן
-            window.open(`https://www.youtube.com/embed/${videoId}?autoplay=1`, '_blank');
+            document.getElementById('player').style.display = 'block';
+            player.loadVideoById(videoId);
           };
 
           resultsDiv.appendChild(div);
