@@ -60,7 +60,7 @@
       const duration = player.getDuration();
       const videoData = player.getVideoData();
 
-      if (duration < 06 ||(!videoData.title || videoData.title.toLowerCase().includes("ad"))) {
+      if (duration < 06 &&(!videoData.title || videoData.title.toLowerCase().includes("ad"))) {
         alert("🚨 זוהה פרסום 🚨");
       }
     }
