@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="he">
 <head>
-  <meta charset="UTF-8">
-  <title>חיפוש יוטיוב - AbeTube</title>
+  <meta charset="UTF-8" />
+  <title>AbeTube עם SponsorBlock</title>
   <style>
     body { font-family: Arial, sans-serif; margin: 0; padding: 0; background: #f4f4f4; direction: rtl; }
     header { background: #222; color: white; padding: 20px; text-align: center; font-size: 24px; }
@@ -22,27 +22,29 @@
 </head>
 <body>
 
-<header>AbeTube - חיפוש סרטונים</header>
+<header>AbeTube - חיפוש סרטונים עם SponsorBlock</header>
 
 <main>
-  <input type="text" id="query" placeholder="הקלד מילות חיפוש...">
+  <input type="text" id="query" placeholder="הקלד מילות חיפוש..." />
   <button onclick="searchYouTube()">חפש</button>
 
-  <div id="player-container">
-    <div id="player" style="display:none;"></div>
+  <div id="player-container" style="margin-top: 20px;">
+    <div id="player"></div>
   </div>
 
   <div class="video-list" id="results"></div>
 </main>
 
-<!-- טעינת ה־YouTube Iframe API -->
+<!-- טען את YouTube Iframe API -->
 <script src="https://www.youtube.com/iframe_api"></script>
 
 <script>
-  const apiKey = 'AIzaSyCKWg2Po9gpQTx2-SSadDOouTB04jBFAAU'; // מפתח API שלך
+  const apiKey = 'AIzaSyCKWg2Po9gpQTx2-SSadDOouTB04jBFAAU'; // הכנס כאן את מפתח ה-API שלך
   let player;
+  let sponsorSegments = [];
+  let checkInterval;
 
-  // פונקציה שנקראת אוטומטית כשה־API מוכן
+  // פונקציה שמופעלת אוטומטית על ידי YouTube API כאשר הוא מוכן
   function onYouTubeIframeAPIReady() {
     player = new YT.Player('player', {
       height: '360',
@@ -54,26 +56,13 @@
     });
   }
 
-  // זיהוי אם יש פרסומת (בערך בלבד)
-  function onPlayerStateChange(event) {
-    if (event.data === YT.PlayerState.PLAYING) {
-      const duration = player.getDuration();
-      const videoData = player.getVideoData();
-
-      if (duration < 06 &&(!videoData.title || videoData.title.toLowerCase().includes("ad"))) {
-       
-		alert("🚨 זוהה פרסום 🚨");
-      }
-    }
-  }
-
-  // חיפוש סרטונים
+  // חיפוש סרטונים ביוטיוב
   function searchYouTube() {
-    const query = document.getElementById('query').value;
-    const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&maxResults=8&q=${encodeURIComponent(query)}&key=${apiKey}`;
+    const query = document.getElementById('query').value.trim();
+    if (!query) return alert("אנא הזן מילת חיפוש");
 
-    fetch(url)
-      .then(response => response.json())
+    fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&maxResults=8&q=${encodeURIComponent(query)}&key=${apiKey}`)
+      .then(res => res.json())
       .then(data => {
         const resultsDiv = document.getElementById('results');
         resultsDiv.innerHTML = '';
@@ -87,23 +76,69 @@
           const div = document.createElement('div');
           div.className = 'video-item';
           div.innerHTML = `
-            <img src="${thumbnail}" alt="${title}">
+            <img src="${thumbnail}" alt="${title}" />
             <div class="video-info">
               <div class="video-title">${title}</div>
               <div class="video-desc">${description}</div>
             </div>
           `;
           div.onclick = () => {
-            document.getElementById('player').style.display = 'block';
-            player.loadVideoById(videoId);
+            loadVideoWithSponsorBlock(videoId);
           };
 
           resultsDiv.appendChild(div);
         });
       })
-      .catch(err => {
-        alert("שגיאה: " + err.message);
-      });
+      .catch(err => alert("שגיאה בחיפוש: " + err.message));
+  }
+
+  // טוען סרטון ומאתחל דילוג על חסויות
+  function loadVideoWithSponsorBlock(videoId) {
+    sponsorSegments = [];
+    if (checkInterval) clearInterval(checkInterval);
+
+    player.loadVideoById(videoId);
+
+    // שולף את קטעי החסויות מ-SponsorBlock
+    fetchSponsorSegments(videoId).then(segments => {
+      sponsorSegments = segments;
+      if (segments.length > 0) {
+        console.log("נמצאו חסויות לדילוג:", segments);
+      }
+      // מתחיל בדיקת מיקום כל שנייה
+      checkInterval = setInterval(checkSponsorSegments, 500);
+    });
+  }
+
+  // קריאה ל-SponsorBlock API לקבלת קטעי חסויות
+  function fetchSponsorSegments(videoId) {
+    const url = `https://sponsor.ajay.app/api/skipSegments?videoID=${videoId}`;
+    return fetch(url)
+      .then(res => {
+        if (!res.ok) return [];
+        return res.json();
+      })
+      .catch(() => []);
+  }
+
+  // בודק אם אנחנו בתוך חסות ומדלג עליה
+  function checkSponsorSegments() {
+    if (!player || player.getPlayerState() !== YT.PlayerState.PLAYING) return;
+
+    const currentTime = player.getCurrentTime();
+    const segment = sponsorSegments.find(s => currentTime >= s.segment[0] && currentTime <= s.segment[1]);
+
+    if (segment) {
+      console.log(`דלג על חסות: ${segment.category} (${segment.segment[0]} - ${segment.segment[1]})`);
+      player.seekTo(segment.segment[1], true);
+    }
+  }
+
+  // מאזין לשינויי מצב הנגן (לא חובה כרגע)
+  function onPlayerStateChange(event) {
+    if (event.data === YT.PlayerState.ENDED) {
+      if (checkInterval) clearInterval(checkInterval);
+    }
   }
 </script>
 
