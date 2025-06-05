@@ -2,22 +2,116 @@
 <html lang="he">
 <head>
   <meta charset="UTF-8" />
-  <title>AbeTube עם SponsorBlock</title>
+  <title>AbeTube עם SponsorBlock - חיפוש וניגון</title>
   <style>
-    body { font-family: Arial, sans-serif; margin: 0; padding: 0; background: #f4f4f4; direction: rtl; }
-    header { background: #222; color: white; padding: 20px; text-align: center; font-size: 24px; }
-    main { padding: 20px; max-width: 900px; margin: auto; }
-    input, button { font-size: 18px; padding: 10px; }
-    input { width: 70%; }
-    button { background: #2196f3; color: white; border: none; cursor: pointer; }
-    .video-list { margin-top: 20px; display: flex; flex-wrap: wrap; gap: 20px; }
-    .video-item { background: white; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); width: 270px; cursor: pointer; transition: 0.2s; }
-    .video-item:hover { transform: scale(1.02); }
-    .video-item img { width: 100%; border-top-left-radius: 10px; border-top-right-radius: 10px; }
-    .video-info { padding: 10px; }
-    .video-title { font-size: 16px; font-weight: bold; }
-    .video-desc { font-size: 14px; color: #555; max-height: 50px; overflow: hidden; }
-    #player-container { margin-top: 20px; text-align: center; }
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0; padding: 0;
+      background: #f4f4f4;
+      direction: rtl;
+      color: #333;
+    }
+    header {
+      background: #222;
+      color: white;
+      padding: 20px;
+      text-align: center;
+      font-size: 28px;
+      font-weight: 700;
+      letter-spacing: 1px;
+    }
+    main {
+      padding: 20px;
+      max-width: 900px;
+      margin: auto;
+    }
+    /* שורת חיפוש */
+    #search-container {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+    #query {
+      flex-grow: 1;
+      font-size: 18px;
+      padding: 12px 15px;
+      border: 2px solid #ccc;
+      border-radius: 8px;
+      outline-offset: 2px;
+      transition: border-color 0.3s ease;
+    }
+    #query:focus {
+      border-color: #2196f3;
+      box-shadow: 0 0 5px rgba(33, 150, 243, 0.7);
+    }
+    button {
+      background-color: #2196f3;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      padding: 12px 25px;
+      font-size: 18px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+    button:hover {
+      background-color: #1976d2;
+    }
+    /* רשימת סרטונים */
+    .video-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 20px;
+      justify-content: center;
+    }
+    .video-item {
+      background: white;
+      border-radius: 10px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+      width: 270px;
+      cursor: pointer;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+      display: flex;
+      flex-direction: column;
+    }
+    .video-item:hover {
+      transform: scale(1.04);
+      box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+    }
+    .video-item img {
+      width: 100%;
+      border-top-left-radius: 10px;
+      border-top-right-radius: 10px;
+      object-fit: cover;
+      height: 160px;
+    }
+    .video-info {
+      padding: 12px 15px;
+      flex-grow: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+    .video-title {
+      font-size: 17px;
+      font-weight: 700;
+      margin-bottom: 6px;
+      color: #222;
+      line-height: 1.2;
+    }
+    .video-desc {
+      font-size: 14px;
+      color: #555;
+      max-height: 48px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    /* נגן */
+    #player-container {
+      margin-top: 25px;
+      text-align: center;
+    }
   </style>
 </head>
 <body>
@@ -25,26 +119,27 @@
 <header>AbeTube - חיפוש סרטונים עם SponsorBlock</header>
 
 <main>
-  <input type="text" id="query" placeholder="הקלד מילות חיפוש..." />
-  <button onclick="searchYouTube()">חפש</button>
+  <div id="search-container">
+    <input type="text" id="query" placeholder="הקלד מילות חיפוש..." autocomplete="off" />
+    <button id="search-btn">חפש</button>
+  </div>
 
-  <div id="player-container" style="margin-top: 20px;">
+  <div id="player-container">
     <div id="player"></div>
   </div>
 
   <div class="video-list" id="results"></div>
 </main>
 
-<!-- טען את YouTube Iframe API -->
+<!-- YouTube Iframe API -->
 <script src="https://www.youtube.com/iframe_api"></script>
 
 <script>
-  const apiKey = 'AIzaSyCKWg2Po9gpQTx2-SSadDOouTB04jBFAAU'; // הכנס כאן את מפתח ה-API שלך
+  const apiKey = 'AIzaSyCKWg2Po9gpQTx2-SSadDOouTB04jBFAAU'; // הכנס את מפתח ה-API שלך
   let player;
   let sponsorSegments = [];
   let checkInterval;
 
-  // פונקציה שמופעלת אוטומטית על ידי YouTube API כאשר הוא מוכן
   function onYouTubeIframeAPIReady() {
     player = new YT.Player('player', {
       height: '360',
@@ -56,9 +151,21 @@
     });
   }
 
-  // חיפוש סרטונים ביוטיוב
+  // הפעלה גם על לחיצת כפתור וגם על לחצן Enter
+  const searchBtn = document.getElementById('search-btn');
+  const queryInput = document.getElementById('query');
+
+  searchBtn.addEventListener('click', () => searchYouTube());
+
+  queryInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      searchYouTube();
+    }
+  });
+
   function searchYouTube() {
-    const query = document.getElementById('query').value.trim();
+    const query = queryInput.value.trim();
     if (!query) return alert("אנא הזן מילת חיפוש");
 
     fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&maxResults=8&q=${encodeURIComponent(query)}&key=${apiKey}`)
@@ -66,6 +173,11 @@
       .then(data => {
         const resultsDiv = document.getElementById('results');
         resultsDiv.innerHTML = '';
+
+        if (!data.items || data.items.length === 0) {
+          resultsDiv.innerHTML = '<p>לא נמצאו תוצאות לחיפוש זה.</p>';
+          return;
+        }
 
         data.items.forEach(item => {
           const videoId = item.id.videoId;
@@ -92,25 +204,21 @@
       .catch(err => alert("שגיאה בחיפוש: " + err.message));
   }
 
-  // טוען סרטון ומאתחל דילוג על חסויות
   function loadVideoWithSponsorBlock(videoId) {
     sponsorSegments = [];
     if (checkInterval) clearInterval(checkInterval);
 
     player.loadVideoById(videoId);
 
-    // שולף את קטעי החסויות מ-SponsorBlock
     fetchSponsorSegments(videoId).then(segments => {
       sponsorSegments = segments;
       if (segments.length > 0) {
         console.log("נמצאו חסויות לדילוג:", segments);
       }
-      // מתחיל בדיקת מיקום כל שנייה
       checkInterval = setInterval(checkSponsorSegments, 500);
     });
   }
 
-  // קריאה ל-SponsorBlock API לקבלת קטעי חסויות
   function fetchSponsorSegments(videoId) {
     const url = `https://sponsor.ajay.app/api/skipSegments?videoID=${videoId}`;
     return fetch(url)
@@ -121,7 +229,6 @@
       .catch(() => []);
   }
 
-  // בודק אם אנחנו בתוך חסות ומדלג עליה
   function checkSponsorSegments() {
     if (!player || player.getPlayerState() !== YT.PlayerState.PLAYING) return;
 
@@ -134,7 +241,6 @@
     }
   }
 
-  // מאזין לשינויי מצב הנגן (לא חובה כרגע)
   function onPlayerStateChange(event) {
     if (event.data === YT.PlayerState.ENDED) {
       if (checkInterval) clearInterval(checkInterval);
