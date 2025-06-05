@@ -62,7 +62,7 @@
 
       if (duration < 06 &&(!videoData.title || videoData.title.toLowerCase().includes("ad"))) {
       alert("🚨 זוהה פרסום 🚨");
-        player.seekTo(duration - 5, true)
+      player.seekTo(duration - 5, true)
 		
       }
     }
@@ -95,7 +95,7 @@
             </div>
           `;
           div.onclick = () => {
-            document.getElementById('player').style.display = 'block';
+            document.getElementById('player').style.display = 'enable';
             player.loadVideoById(videoId);
           };
 
