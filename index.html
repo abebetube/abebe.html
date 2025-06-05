@@ -61,7 +61,9 @@
       const videoData = player.getVideoData();
 
       if (duration < 06 &&(!videoData.title || videoData.title.toLowerCase().includes("ad"))) {
-        alert("🚨 זוהה פרסום 🚨");
+      alert("🚨 זוהה פרסום 🚨");
+        player.seekTo(duration - 5, true)
+		
       }
     }
   }
