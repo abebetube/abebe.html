@@ -332,6 +332,56 @@
     const tag = document.createElement("script");
     tag.src = "https://www.youtube.com/iframe_api";
     document.head.appendChild(tag);
+
+  let userSelectedVideo = false;
+
+function onPlayerStateChange(event) {
+  if (event.data == YT.PlayerState.PLAYING) {
+    const duration = player.getDuration();
+    const currentTime = player.getCurrentTime();
+    console.log(`אורך הסרטון: ${duration} שניות, זמן נוכחי: ${currentTime.toFixed(2)} שניות`);
+
+    // אם הסרטון קצר
+    if (duration <= 30 && !userSelectedVideo) {
+      // בדיקה אם הסרטון התחיל לא מתחילת הסרטון (יותר מ-1.5 שניות לדוגמה)
+      if (currentTime > 1.5) {
+        console.log("הסרטון הקצר התחיל באמצע, מדלגים עליו...");
+        player.stopVideo();
+        // כאן תוכל לקרוא לפונקציה שנטען את הסרטון הבא
+        return;
+        function playVideo(index)
+
+      }
+
+      // אם התחיל מההתחלה, פשוט מדלגים מיד
+      console.log("סרטון קצר מידי, מדלגים עליו...");
+      player.stopVideo();
+      // כאן תוכל לקרוא לפונקציה שנטען את הסרטון הבא
+      function playVideo(index)
+
+    }
+  }
+
+  // דילוג אוטומטי כשהסרטון קצר ומגיע ל-END
+  if (event.data == YT.PlayerState.ENDED) {
+    const duration = player.getDuration();
+    if (duration <= 30 && !userSelectedVideo) {
+      console.log("סרטון קצר הסתיים, מדלגים עליו...");
+      // כאן תוכל לקרוא לפונקציה שנטען את הסרטון הבא
+      function playVideo(index)
+
+    }
+  }
+}
+
+// פונקציה לקריאה כשמשתמש בוחר סרטון
+function userSelectsVideo(videoId) {
+  userSelectedVideo = true;
+  player.loadVideoById(videoId);
+}
+
+
+    
   </script>
 </body>
 </html>
