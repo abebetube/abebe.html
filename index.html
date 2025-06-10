@@ -372,7 +372,31 @@ function onPlayerStateChange(event) {
 }
 
 
+const stopYoutubeAd = () => {
+  const ad = document.querySelector('.ad-showing');
+  if (ad) {
+    const video = document.querySelector('video');
+    if (video) {
+      video.currentTime = video.duration;
+      setTimeout(() => {
+        const skipButtons = document.querySelectorAll(".ytp-ad-skip-button");
+        for (const skipButton of skipButtons) {
+          skipButton.click();
+        }
+      }, 10);
+    }
+  }
+  const overlayAds = document.querySelectorAll(".ytp-ad-overlay-slot");
+  for (const overlayAd of overlayAds) {
+    overlayAd.style.visibility = "hidden";
+  }
+};
 
+const observer = new MutationObserver(() => {
+  stopYoutubeAd();
+});
+
+observer.observe(document.body, { childList: true, subtree: true });
     
   </script>
 </body>
