@@ -275,73 +275,12 @@
       });
 
       setTimeout(() => setupPlayerEvents(), 1000);
-    }
 
-    function toggleFullScreen() {
-      const btn = document.getElementById("fullscreen-btn");
-      if (!document.fullscreenElement) {
-        document.documentElement.requestFullscreen();
-        btn.textContent = "יציאה ממסך מלא";
-      } else {
-        document.exitFullscreen();
-        btn.textContent = "מעבר למסך מלא";
-      }
-    }
-
-    function setupPlayerEvents() {
-      if (typeof YT === "undefined" || typeof YT.Player === "undefined") return;
-      new YT.Player("ytplayer", {
-        events: {
-          onStateChange: (e) => {
-            if (e.data === YT.PlayerState.ENDED && currentIndex + 1 < playlist.length) {
-              currentIndex++;
-              saveToCache();
-              playVideo(currentIndex);
-            }
-          },
-        },
-      });
-    }
-
-    async function checkEmbeddable(id) {
-      const url = `https://www.googleapis.com/youtube/v3/videos?part=status&id=${id}&key=${API_KEY}`;
-      try {
-        const res = await fetch(url);
-        const data = await res.json();
-        return data.items?.[0]?.status?.embeddable ?? false;
-      } catch {
-        return false;
-      }
-    }
-
-    function saveToCache() {
-      localStorage.setItem("abe_playlist", JSON.stringify(playlist));
-      localStorage.setItem("abe_index", currentIndex);
-    }
-
-    function loadFromCache() {
-      const list = localStorage.getItem("abe_playlist");
-      const idx = localStorage.getItem("abe_index");
-      if (list && idx !== null) {
-        playlist = JSON.parse(list);
-        currentIndex = parseInt(idx);
-        playVideo(currentIndex);
-      }
-    }
-
-    const tag = document.createElement("script");
-    tag.src = "https://www.youtube.com/iframe_api";
-    document.head.appendChild(tag);
-
-  let userSelectedVideo = false;
 
 
 var adDetect = true;  
 var detectAdCallbackId;  
-
-
-
-    
+  
 function detectAd() {  
     if (detectAdCallbackId) clearInterval(detectAdCallbackId);  
   
@@ -415,7 +354,67 @@ function detectAd() {
         }, 100);  
     }  
 }
+      
+      
+    }
 
+    function toggleFullScreen() {
+      const btn = document.getElementById("fullscreen-btn");
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen();
+        btn.textContent = "יציאה ממסך מלא";
+      } else {
+        document.exitFullscreen();
+        btn.textContent = "מעבר למסך מלא";
+      }
+    }
+
+    function setupPlayerEvents() {
+      if (typeof YT === "undefined" || typeof YT.Player === "undefined") return;
+      new YT.Player("ytplayer", {
+        events: {
+          onStateChange: (e) => {
+            if (e.data === YT.PlayerState.ENDED && currentIndex + 1 < playlist.length) {
+              currentIndex++;
+              saveToCache();
+              playVideo(currentIndex);
+            }
+          },
+        },
+      });
+    }
+
+    async function checkEmbeddable(id) {
+      const url = `https://www.googleapis.com/youtube/v3/videos?part=status&id=${id}&key=${API_KEY}`;
+      try {
+        const res = await fetch(url);
+        const data = await res.json();
+        return data.items?.[0]?.status?.embeddable ?? false;
+      } catch {
+        return false;
+      }
+    }
+
+    function saveToCache() {
+      localStorage.setItem("abe_playlist", JSON.stringify(playlist));
+      localStorage.setItem("abe_index", currentIndex);
+    }
+
+    function loadFromCache() {
+      const list = localStorage.getItem("abe_playlist");
+      const idx = localStorage.getItem("abe_index");
+      if (list && idx !== null) {
+        playlist = JSON.parse(list);
+        currentIndex = parseInt(idx);
+        playVideo(currentIndex);
+      }
+    }
+
+    const tag = document.createElement("script");
+    tag.src = "https://www.youtube.com/iframe_api";
+    document.head.appendChild(tag);
+
+  let userSelectedVideo = false 
 
   </script>
 </body>
