@@ -335,69 +335,88 @@
 
   let userSelectedVideo = false;
 
-function onPlayerStateChange(event) {
-  if (event.data == YT.PlayerState.PLAYING) {
-    const duration = player.getDuration();
-    const currentTime = player.getCurrentTime();
-    console.log(`אורך הסרטון: ${duration} שניות, זמן נוכחי: ${currentTime.toFixed(2)} שניות`);
 
-    // אם הסרטון קצר
-    if (duration <= 30 && !userSelectedVideo) {
-      // בדיקה אם הסרטון התחיל לא מתחילת הסרטון (יותר מ-1.5 שניות לדוגמה)
-      if (currentTime > 1.5) {
-        console.log("הסרטון הקצר התחיל באמצע, מדלגים עליו...");
-        player.stopVideo();
-        // כאן תוכל לקרוא לפונקציה שנטען את הסרטון הבא
-        return;
+var adDetect = true;  
+var detectAdCallbackId;  
 
-      }
 
-      // אם התחיל מההתחלה, פשוט מדלגים מיד
-      console.log("סרטון קצר מידי, מדלגים עליו...");
-      player.stopVideo();
-      // כאן תוכל לקרוא לפונקציה שנטען את הסרטון הבא
 
-    }
-  }
-
-  // דילוג אוטומטי כשהסרטון קצר ומגיע ל-END
-  if (event.data == YT.PlayerState.ENDED) {
-    const duration = player.getDuration();
-    if (duration <= 30 && !userSelectedVideo) {
-      console.log("סרטון קצר הסתיים, מדלגים עליו...");
-      // כאן תוכל לקרוא לפונקציה שנטען את הסרטון הבא
-
-    }
-  }
+    
+function detectAd() {  
+    if (detectAdCallbackId) clearInterval(detectAdCallbackId);  
+  
+    const playerIframe = document.querySelector("iframe");  
+  
+    if (adDetect && playerIframe) {  
+        detectAdCallbackId = setInterval(() => {  
+            if (!playerIframe) {  
+                console.log('adDetect : playerIframe is returned null');  
+                return;  
+            }  
+  
+            const frameDoc = playerIframe.contentDocument;  
+  
+            if (!frameDoc) {  
+                console.log('adDetect : frameDoc is returned null');  
+                return;  
+            }  
+  
+            const adsContainer = frameDoc.querySelector('.video-ads');  
+  
+            if (!adsContainer || adsContainer.childElementCount == 0) {  
+                console.log('adDetect adsContainer null or child is empty return');  
+                return;  
+            }  
+  
+            const adsVideo = adsContainer.querySelector("video");  
+            if (adsVideo) {  
+                // Ad Detected  
+                console.log('case 1 : Ad is showing right now!');  
+  
+                // דילוג על מודעה - מעבירים את זמן הניגון כמעט לסוף  
+                try {  
+                    adsVideo.currentTime = adsVideo.duration - 0.15;  
+                } catch(e) {  
+                    console.warn('Could not skip ad video:', e);  
+                }  
+  
+                YouTubePlayerBridge.sendAdDetected();  
+                if (detectAdCallbackId) clearInterval(detectAdCallbackId);  
+            } else {  
+                const isAdShowing = frameDoc.getElementsByClassName('ad-showing').length != 0;  
+  
+                if (!isAdShowing) {  
+                    console.log('case 2 : ad is not showing');  
+                    return;  
+                }  
+  
+                const mainVideo = frameDoc.querySelector('.html5-main-video');  
+  
+                if (!mainVideo) {  
+                    console.log('case 2 : main video does not exist');  
+                    return;  
+                }  
+  
+                // Ad Detected  
+                console.log('case 2 : Ad is showing right now!');  
+  
+                // דילוג על מודעה - מעבירים את זמן הניגון כמעט לסוף  
+                try {  
+                    mainVideo.currentTime = mainVideo.duration - 0.15;  
+                } catch(e) {  
+                    console.warn('Could not skip main video ad:', e);  
+                }  
+  
+                YouTubePlayerBridge.sendAdDetected();  
+  
+                if (detectAdCallbackId) clearInterval(detectAdCallbackId);  
+            }  
+  
+        }, 100);  
+    }  
 }
 
 
-const stopYoutubeAd = () => {
-  const ad = document.querySelector('.ad-showing');
-  if (ad) {
-    const video = document.querySelector('video');
-    if (video) {
-      video.currentTime = video.duration;
-      setTimeout(() => {
-        const skipButtons = document.querySelectorAll(".ytp-ad-skip-button");
-        for (const skipButton of skipButtons) {
-          skipButton.click();
-        }
-      }, 10);
-    }
-  }
-  const overlayAds = document.querySelectorAll(".ytp-ad-overlay-slot");
-  for (const overlayAd of overlayAds) {
-    overlayAd.style.visibility = "hidden";
-  }
-};
-
-const observer = new MutationObserver(() => {
-  stopYoutubeAd();
-});
-
-observer.observe(document.body, { childList: true, subtree: true });
-    
   </script>
 </body>
 </html>
