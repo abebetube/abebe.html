@@ -1,71 +1,78 @@
-<!DOCTYPE html><html lang="he">
+<!DOCTYPE html>
+<html lang="he">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AbeTube – ללא פרסומות</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>נגן יוטיוב עם מעבר אוטומטי</title>
   <style>
     body {
       margin: 0;
       display: flex;
-      flex-direction: column;
-      align-items: center;
       justify-content: center;
-      min-height: 100vh;
-      font-family: Arial, sans-serif;
-      background-color: #000;
+      align-items: center;
+      height: 100vh;
+      background: #000;
     }
-    iframe {
+    #player {
       width: 100%;
-      height: 56.25vw;
-      max-height: 90vh;
-      max-width: 1600px;
-      border: none;
-    }
-    input[type="text"] {
-      padding: 10px;
-      font-size: 16px;
-      width: 90%;
-      max-width: 600px;
-      margin: 10px;
-      border-radius: 8px;
-      border: 1px solid #ccc;
-    }
-    button {
-      padding: 10px 20px;
-      font-size: 16px;
-      border: none;
-      background-color: #f00;
-      color: white;
-      border-radius: 8px;
-      cursor: pointer;
+      max-width: 720px;
+      aspect-ratio: 16 / 9;
     }
   </style>
 </head>
 <body>
-  <h1 style="color: white">צפייה ביוטיוב ללא פרסומות</h1>
-  <input type="text" id="videoInput" placeholder="הדבק קישור YouTube או חפש מילה">
-  <button onclick="loadVideo()">צפה</button>
-  <iframe id="pipedPlayer" src="" allowfullscreen></iframe>  <script>
-    function loadVideo() {
-      const input = document.getElementById('videoInput').value.trim();
-      const iframe = document.getElementById('pipedPlayer');
-      let videoId = '';
+  <div id="player"></div>
 
-      if (input.includes('youtube.com') || input.includes('youtu.be')) {
-        // ניתוח כתובת URL
-        const url = new URL(input);
-        if (url.hostname === 'youtu.be') {
-          videoId = url.pathname.substring(1);
-        } else if (url.searchParams.has('v')) {
-          videoId = url.searchParams.get('v');
-        }
-      } else {
-        alert('יש להדביק קישור לסרטון ביוטיוב.');
-        return;
-      }
+  <script>
+    // רשימת מזהי סרטונים (Video IDs) שיושמעו ברצף
+    const playlist = [
+      "dQw4w9WgXcQ",
+      "e-ORhEE9VVg",
+      "M7lc1UVf-VE"
+    ];
 
-      // שימוש בשרת piped
-      iframe.src = `https://piped.video/embed/${videoId}`;
+    let currentVideoIndex = 0;
+    let player;
+
+    // טעינת API של יוטיוב
+    function onYouTubeIframeAPIReady() {
+      player = new YT.Player("player", {
+        height: "100%",
+        width: "100%",
+        videoId: playlist[currentVideoIndex],
+        playerVars: {
+          autoplay: 1,
+          controls: 1,
+          modestbranding: 1,
+          rel: 0,
+          showinfo: 0,
+          disablekb: 0,
+          fs: 1,
+          iv_load_policy: 3,
+          playsinline: 1,
+        },
+        events: {
+          onStateChange: onPlayerStateChange,
+        },
+      });
     }
-  </script></body>
+
+    // כאשר הסרטון נגמר - עבור לסרטון הבא אוטומטית
+    function onPlayerStateChange(event) {
+      if (event.data === YT.PlayerState.ENDED) {
+        currentVideoIndex++;
+        if (currentVideoIndex >= playlist.length) {
+          currentVideoIndex = 0; // לחזור להתחלה
+        }
+        player.loadVideoById(playlist[currentVideoIndex]);
+      }
+    }
+
+    // הוספת סקריפט API של יוטיוב
+    let tag = document.createElement("script");
+    tag.src = "https://www.youtube.com/iframe_api";
+    let firstScriptTag = document.getElementsByTagName("script")[0];
+    firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+  </script>
+</body>
 </html>
