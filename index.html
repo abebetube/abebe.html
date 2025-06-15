@@ -365,15 +365,14 @@
 
     // פונקציה לנסות לדלג על פרסומות
     function autoSkipAd() {
-      const skipBtn = document.querySelector('.ytp-ad-skip-button');
-      if (skipBtn) {
-        skipBtn.click();
-        console.log('דלג אוטומטי');
-      }
-    }
-
-    // מריץ את הפונקציה כל חצי שניה
-    setInterval(autoSkipAd, 500);
+  const skipBtn = document.querySelector('.ytp-ad-skip-button');
+  if (skipBtn) {
+    skipBtn.click();
+    console.log('דלג אוטומטית');
+  } else {
+    // אם לא מצא, ננסה שוב בכל הרצה
+  }
+}
 
     // קוד הפיצוצים של הזיקוקים - נשאר כמו במקור
     function launchFireworks(count = 5) {
