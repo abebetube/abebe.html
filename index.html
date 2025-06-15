@@ -1,78 +1,242 @@
+
 <!DOCTYPE html>
-<html lang="he">
+<html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>נגן יוטיוב עם מעבר אוטומטי</title>
-  <style>
-    body {
-      margin: 0;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
-      background: #000;
-    }
-    #player {
-      width: 100%;
-      max-width: 720px;
-      aspect-ratio: 16 / 9;
-    }
-  </style>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Invidious Video Player</title>
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    margin: 0; padding: 0;
+    background: #121212;
+    color: white;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  header {
+    padding: 1rem;
+    width: 100%;
+    max-width: 900px;
+    box-sizing: border-box;
+    background: #1f1f1f;
+    text-align: center;
+  }
+  #searchForm {
+    display: flex;
+    margin-bottom: 1rem;
+  }
+  #searchInput {
+    flex-grow: 1;
+    padding: 0.5rem;
+    font-size: 1rem;
+    border-radius: 4px 0 0 4px;
+    border: none;
+    outline: none;
+  }
+  #searchBtn {
+    padding: 0.5rem 1rem;
+    font-size: 1rem;
+    border: none;
+    background: #2196f3;
+    color: white;
+    cursor: pointer;
+    border-radius: 0 4px 4px 0;
+  }
+  #searchBtn:hover {
+    background: #1976d2;
+  }
+  #playerContainer {
+    position: relative;
+    width: 90%;
+    max-width: 900px;
+    padding-top: 56.25%; /* 16:9 aspect ratio */
+    margin-bottom: 1rem;
+  }
+  #videoPlayer {
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    width: 100%;
+    height: 100%;
+    border: none;
+    border-radius: 8px;
+  }
+  #results {
+    width: 90%;
+    max-width: 900px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    justify-content: center;
+  }
+  .videoItem {
+    background: #222;
+    border-radius: 6px;
+    overflow: hidden;
+    width: 180px;
+    cursor: pointer;
+    transition: background 0.3s;
+  }
+  .videoItem:hover {
+    background: #333;
+  }
+  .thumbnail {
+    width: 100%;
+    height: 100px;
+    object-fit: cover;
+  }
+  .title {
+    padding: 0.5rem;
+    font-size: 0.9rem;
+  }
+</style>
 </head>
 <body>
-  <div id="player"></div>
 
-  <script>
-    // רשימת מזהי סרטונים (Video IDs) שיושמעו ברצף
-    const playlist = [
-      "dQw4w9WgXcQ",
-      "e-ORhEE9VVg",
-      "M7lc1UVf-VE"
-    ];
+<header>
+  <h1>Invidious Video Player (No Ads)</h1>
+  <form id="searchForm">
+    <input id="searchInput" type="search" placeholder="Search videos..." required />
+    <button id="searchBtn" type="submit">Search</button>
+  </form>
+</header>
 
-    let currentVideoIndex = 0;
-    let player;
+<div id="playerContainer" style="display:none;">
+  <iframe id="videoPlayer" src="" allowfullscreen allow="autoplay"></iframe>
+</div>
 
-    // טעינת API של יוטיוב
-    function onYouTubeIframeAPIReady() {
-      player = new YT.Player("player", {
-        height: "100%",
-        width: "100%",
-        videoId: playlist[currentVideoIndex],
-        playerVars: {
-          autoplay: 1,
-          controls: 1,
-          modestbranding: 1,
-          rel: 0,
-          showinfo: 0,
-          disablekb: 0,
-          fs: 1,
-          iv_load_policy: 3,
-          playsinline: 1,
-        },
-        events: {
-          onStateChange: onPlayerStateChange,
-        },
-      });
+<div id="results"></div>
+
+<script>
+  const invidiousInstance = 'https://invidious.snopyta.org';
+  const searchForm = document.getElementById('searchForm');
+  const searchInput = document.getElementById('searchInput');
+  const resultsDiv = document.getElementById('results');
+  const playerContainer = document.getElementById('playerContainer');
+  const videoPlayer = document.getElementById('videoPlayer');
+
+  let videoList = [];
+  let currentIndex = 0;
+
+  searchForm.addEventListener('submit', e => {
+    e.preventDefault();
+    const query = searchInput.value.trim();
+    if (query) {
+      searchVideos(query);
     }
+  });
 
-    // כאשר הסרטון נגמר - עבור לסרטון הבא אוטומטית
-    function onPlayerStateChange(event) {
-      if (event.data === YT.PlayerState.ENDED) {
-        currentVideoIndex++;
-        if (currentVideoIndex >= playlist.length) {
-          currentVideoIndex = 0; // לחזור להתחלה
-        }
-        player.loadVideoById(playlist[currentVideoIndex]);
+  async function searchVideos(query) {
+    try {
+      resultsDiv.innerHTML = 'Loading...';
+      playerContainer.style.display = 'none';
+      const response = await fetch(`${invidiousInstance}/api/v1/search?q=${encodeURIComponent(query)}`);
+      const data = await response.json();
+
+      // סינון תוצאות לסרטונים בלבד (type = 'video')
+      videoList = data.filter(item => item.type === 'video');
+      if (videoList.length === 0) {
+        resultsDiv.innerHTML = '<p>No videos found.</p>';
+        return;
       }
-    }
 
-    // הוספת סקריפט API של יוטיוב
-    let tag = document.createElement("script");
-    tag.src = "https://www.youtube.com/iframe_api";
-    let firstScriptTag = document.getElementsByTagName("script")[0];
-    firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
-  </script>
+      currentIndex = 0;
+      displayResults(videoList);
+      playVideoByIndex(currentIndex);
+    } catch (error) {
+      resultsDiv.innerHTML = '<p>Error loading videos.</p>';
+      console.error(error);
+    }
+  }
+
+  function displayResults(videos) {
+    resultsDiv.innerHTML = '';
+    videos.forEach((video, index) => {
+      const div = document.createElement('div');
+      div.className = 'videoItem';
+      div.innerHTML = `
+        <img class="thumbnail" src="${video.videoThumbnails?.[0]?.url || ''}" alt="${video.title}" />
+        <div class="title">${video.title}</div>
+      `;
+      div.addEventListener('click', () => {
+        playVideoByIndex(index);
+      });
+      resultsDiv.appendChild(div);
+    });
+  }
+
+  function playVideoByIndex(index) {
+    if (!videoList[index]) return;
+    const videoId = videoList[index].videoId;
+    const embedUrl = `${invidiousInstance}/embed/${videoId}?autoplay=1`;
+    videoPlayer.src = embedUrl;
+    playerContainer.style.display = 'block';
+
+    currentIndex = index;
+  }
+
+  // דילוג אוטומטי לסרטון הבא אחרי סיום?  
+  // לצערי איננו יכולים לקבל אירוע "סיום" ישירות מ-iframe של Invidious בגלל הגבלות אבטחה (CORS).
+  // אבל נוכל להפעיל טיימר לפי משך הסרטון (אם קיים) - או להוסיף כפתור "הבא" למעבר ידני.
+
+  // הוספת כפתור הבא מתחת לנגן:
+  const nextBtn = document.createElement('button');
+  nextBtn.textContent = 'Next ▶️';
+  nextBtn.style.marginBottom = '1rem';
+  nextBtn.style.padding = '0.5rem 1rem';
+  nextBtn.style.fontSize = '1rem';
+  nextBtn.style.cursor = 'pointer';
+  nextBtn.style.borderRadius = '6px';
+  nextBtn.style.border = 'none';
+  nextBtn.style.background = '#2196f3';
+  nextBtn.style.color = 'white';
+  nextBtn.style.display = 'none'; // Initially hidden
+  playerContainer.insertAdjacentElement('afterend', nextBtn);
+
+  nextBtn.addEventListener('click', () => {
+    if (currentIndex < videoList.length - 1) {
+      playVideoByIndex(currentIndex + 1);
+    } else {
+      alert('This is the last video in the list.');
+    }
+  });
+
+  // אחרי חיפוש - להראות כפתור הבא
+  function showNextButton() {
+    if (videoList.length > 1) {
+      nextBtn.style.display = 'inline-block';
+    } else {
+      nextBtn.style.display = 'none';
+    }
+  }
+
+  // לשפר הפעלה אוטומטית עם טיימר לפי משך הסרטון:
+  let autoNextTimeout;
+  function scheduleAutoNext() {
+    clearTimeout(autoNextTimeout);
+    const currentVideo = videoList[currentIndex];
+    if (!currentVideo) return;
+
+    // משך הסרטון בשניות (אם יש)
+    const durationSeconds = currentVideo.lengthSeconds ? parseInt(currentVideo.lengthSeconds) : 0;
+    if (durationSeconds > 0) {
+      autoNextTimeout = setTimeout(() => {
+        if (currentIndex < videoList.length - 1) {
+          playVideoByIndex(currentIndex + 1);
+        }
+      }, durationSeconds * 1000 + 2000); // תוספת של 2 שניות רווח
+    }
+  }
+
+  // שינוי הפונקציה playVideoByIndex לקרוא scheduleAutoNext:
+  const originalPlayVideoByIndex = playVideoByIndex;
+  playVideoByIndex = (index) => {
+    originalPlayVideoByIndex(index);
+    showNextButton();
+    scheduleAutoNext();
+  };
+</script>
+
 </body>
 </html>
