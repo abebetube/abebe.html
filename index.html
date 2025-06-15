@@ -6,6 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link rel="icon" type="image/png" href="logo.png" />
   <style>
+    /* הסטיילים שלך... (שמרתי כמו שהגבת, לא שיניתי) */
     body {
       font-family: 'Segoe UI', sans-serif;
       background-color: #f9f9f9;
@@ -362,18 +363,17 @@
     tag.src = "https://www.youtube.com/iframe_api";
     document.head.appendChild(tag);
 
-    // הוספת פונקציה לנסות לדלג על פרסומות
-   // פונקציה לנסות לדלג על הפרסומת באופן אוטומטי
-function autoSkipAd() {
-  const skipBtn = document.querySelector('.ytp-ad-skip-button');
-  if (skipBtn) {
-    skipBtn.click();
-    console.log('דלג אוטומטית');
-  }
-}
+    // פונקציה לנסות לדלג על פרסומות
+    function autoSkipAd() {
+      const skipBtn = document.querySelector('.ytp-ad-skip-button');
+      if (skipBtn) {
+        skipBtn.click();
+        console.log('דלג אוטומטי');
+      }
+    }
 
-// מריץ את הפונקציה כל 0.5 שניות
-setInterval(autoSkipAd, 100);
+    // מריץ את הפונקציה כל חצי שניה
+    setInterval(autoSkipAd, 500);
 
     // קוד הפיצוצים של הזיקוקים - נשאר כמו במקור
     function launchFireworks(count = 5) {
