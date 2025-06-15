@@ -261,7 +261,7 @@
       // יצירת ה־iframe לניגון הסרטון
       const videoSrc = `https://www.youtube-nocookie.com/embed/${video.videoId}?autoplay=1&enablejsapi=1&rel=0&modestbranding=1&iv_load_policy=3&showinfo=0`;
       document.getElementById("player-container").innerHTML = `
-        <iframe id="ytplayer" src="${videoSrc}" allowfullscreen allow="autoplay"></iframe>`;
+        <embed id="ytplayer" src="${videoSrc}" allowfullscreen allow="autoplay"></embed>`;
 
       // עדכון רשימת ההמלצות
       const resultsDiv = document.getElementById("results");
