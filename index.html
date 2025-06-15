@@ -3,44 +3,99 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>AbeTube – סרטונים פופולריים בלי פרסומות</title>
+  <title>AbeTube – יוטיוב ללא פרסומות</title>
   <style>
-    body { margin:0; padding:1rem; font-family:sans-serif; background:#f2f2f2; color:#333; direction:rtl; }
-    h1 { text-align:center; margin-bottom:1rem; }
-    button { padding:0.6rem 1.2rem; font-size:1rem; cursor:pointer; border:none; background:#2196f3; color:white; border-radius:6px; }
-    #player { width:100%; max-width:800px; aspect-ratio:16/9; margin:1rem auto; display:none; }
+    body { margin:0; padding:1rem; font-family:sans-serif; direction:rtl; background:#fafafa; color:#333 }
+    h1 { text-align:center; }
+    .search-box { display:flex; max-width:600px; margin:1rem auto; }
+    .search-box input { flex:1; padding:0.6rem; font-size:1rem; border:1px solid #ccc; border-radius:4px 0 0 4px; }
+    .search-box button { padding:0.6rem 1rem; font-size:1rem; border:none; background:#2196f3; color:#fff; cursor:pointer; border-radius:0 4px 4px 0; }
+    #playerContainer { display:none; max-width:800px; margin:1rem auto; aspect-ratio:16/9; }
     iframe { width:100%; height:100%; border:none; border-radius:8px; }
   </style>
 </head>
 <body>
 
-  <h1>🎬 AbeTube – רשת סרטונים פופולריים ללא פרסומות</h1>
-  <button onclick="loadPopular()">טען סרטונים פופולריים</button>
-  <div id="player"><iframe src="" allowfullscreen></iframe></div>
+  <h1>AbeTube – ללא פרסומות</h1>
+
+  <div class="search-box">
+    <input type="text" id="searchInput" placeholder="כתוב מילת חיפוש ולחץ חפש">
+    <button id="searchBtn">🔍 חפש</button>
+  </div>
+
+  <div id="playerContainer">
+    <iframe id="videoPlayer" allowfullscreen></iframe>
+  </div>
 
   <script>
-    const instance = 'https://inv.nadeko.net';
-    const player = document.getElementById('player');
-    const iframe = player.querySelector('iframe');
+    // רשימת שרתים לבדיקה
+    const instances = [
+      'https://yewtu.be',
+      'https://inv.nadeko.net',
+      'https://invidious.nerdvpn.de',
+      'https://invidious.fdn.fr',
+      'https://invidious.snopyta.org'
+    ];
 
-    async function loadPopular() {
+    let invidiousInstance = null;
+    let videoIds = [];
+
+    // בדיקת זמינות השרת
+    async function findWorkingInstance() {
+      for (let url of instances) {
+        try {
+          const res = await fetch(`${url}/api/v1/stats`, {mode: 'cors'});
+          if (!res.ok) throw new Error();
+          const data = await res.json();
+          if (data.software && data.software.toLowerCase().includes('invidious')) {
+            return url;
+          }
+        } catch {}
+      }
+      return null;
+    }
+
+    // חיפוש וטעינת הפלייליסט
+    async function searchAndPlay() {
+      const q = document.getElementById('searchInput').value.trim();
+      if (!q || !invidiousInstance) return;
+
       try {
-        const res = await fetch(`${instance}/feed/popular`);
+        const res = await fetch(`${invidiousInstance}/api/v1/search?q=${encodeURIComponent(q)}`, {mode:'cors'});
         const arr = await res.json();
-        const vids = arr
-          .filter(v => v.videoId)
-          .map(v => v.videoId);
+        videoIds = arr
+          .filter(o => o.type === 'video')
+          .slice(0, 10)
+          .map(o => o.videoId);
+        if (!videoIds.length) throw new Error();
 
-        if (!vids.length) return alert('לא נמצאו סרטונים פופולריים.');
-
-        const list = vids.join(',');
-        iframe.src = `${instance}/embed/?list=${list}&autoplay=1`;
-        player.style.display = 'block';
+        const list = videoIds.join(',');
+        document.getElementById('videoPlayer').src = `${invidiousInstance}/embed/?list=${list}&autoplay=1`;
+        document.getElementById('playerContainer').style.display = 'block';
       } catch (e) {
         console.error(e);
-        alert('שגיאה בטעינת הסרטונים. נסה שוב.');
+        alert('שגיאה בחיפוש או בטעינת סרטונים. מתנסה בשרת אחר...');
+        // נסה שרת חלופי
+        const idx = instances.indexOf(invidiousInstance);
+        const next = instances.slice(idx + 1);
+        invidiousInstance = next.length ? next[0] : null;
+        if (invidiousInstance) searchAndPlay();
+        else alert('לא נמצאו שרתים זמינים כרגע.');
       }
     }
+
+    // אתחול: מצא שרת בעבודה
+    window.addEventListener('load', async () => {
+      invidiousInstance = await findWorkingInstance();
+      if (!invidiousInstance) {
+        alert('אין שרתי Invidious זמינים כרגע.');
+      }
+    });
+
+    document.getElementById('searchBtn').addEventListener('click', searchAndPlay);
+    document.getElementById('searchInput').addEventListener('keydown', e => {
+      if (e.key === 'Enter') searchAndPlay();
+    });
   </script>
 
 </body>
