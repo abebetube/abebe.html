@@ -1,154 +1,28 @@
 <!DOCTYPE html>
 <html lang="he" dir="rtl">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>AbeTube - יוטיוב ללא פרסומות</title>
+  <meta charset="UTF-8" />
+  <title>AbeTube - Playlist Mode</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <style>
     body {
-      font-family: Arial, sans-serif;
+      background-color: #000;
       margin: 0;
-      padding: 1rem;
-      background-color: #f2f2f2;
-      color: #333;
-    }
-    h1 {
-      text-align: center;
-    }
-    input[type="text"] {
-      width: 100%;
-      padding: 0.75rem;
-      margin: 1rem 0;
-      font-size: 1rem;
-      border-radius: 8px;
-      border: 1px solid #ccc;
-    }
-    #playerContainer {
-      display: none;
-      width: 100%;
-      max-width: 800px;
-      margin: 1rem auto;
-      aspect-ratio: 16 / 9;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      height: 100vh;
     }
     iframe {
       width: 100%;
       height: 100%;
       border: none;
     }
-    #results {
-      text-align: center;
-      margin-top: 1rem;
-    }
-    @media (max-width: 600px) {
-      h1 {
-        font-size: 1.5rem;
-      }
-    }
   </style>
 </head>
 <body>
-
-  <h1>AbeTube - יוטיוב ללא פרסומות</h1>
-  <input type="text" id="searchInput" placeholder="הקלד מילת חיפוש ולחץ אנטר...">
-  <div id="playerContainer">
-    <iframe id="videoPlayer" allowfullscreen></iframe>
-  </div>
-  <div id="results"></div>
-
-  <script>
-    const instances = [
-      'https://yewtu.be',
-      'https://inv.nadeko.net',
-      'https://invidious.nerdvpn.de',
-      'https://invidious.fdn.fr',
-      'https://invidious.snopyta.org'
-    ];
-
-    let invidiousInstance = '';
-    let videoList = [];
-    let currentIndex = 0;
-
-    async function checkInstance(url) {
-      try {
-        const res = await fetch(`${url}/api/v1/stats`);
-        if (!res.ok) throw new Error();
-        const data = await res.json();
-        return data?.software === "invidious";
-      } catch {
-        return false;
-      }
-    }
-
-    async function findWorkingInstance() {
-      for (const url of instances) {
-        const works = await checkInstance(url);
-        if (works) {
-          invidiousInstance = url;
-          console.log(`✅ Using instance: ${url}`);
-          return;
-        }
-      }
-      alert('⚠️ לא נמצאה אף מערכת Invidious זמינה כרגע.');
-    }
-
-    async function searchVideos(query, retryIndex = 0) {
-      document.getElementById('results').innerHTML = 'טוען...';
-      document.getElementById('playerContainer').style.display = 'none';
-
-      try {
-        const resp = await fetch(`${invidiousInstance}/api/v1/search?q=${encodeURIComponent(query)}`);
-        const data = await resp.json();
-
-        if (!Array.isArray(data)) throw new Error('תוצאה לא תקינה');
-
-        videoList = data.filter(item => item.type === 'video');
-        if (!videoList.length) {
-          document.getElementById('results').innerHTML = 'לא נמצאו סרטונים.';
-          return;
-        }
-
-        playVideo(0);
-      } catch (err) {
-        console.warn(`❌ ${invidiousInstance} לא עבד. מנסה שרת אחר...`);
-        if (retryIndex < instances.length - 1) {
-          invidiousInstance = instances[retryIndex + 1];
-          searchVideos(query, retryIndex + 1);
-        } else {
-          document.getElementById('results').innerHTML = 'שגיאה בטעינת סרטונים מכל השרתים.';
-        }
-      }
-    }
-
-    function playVideo(index) {
-      if (!videoList[index]) {
-        document.getElementById('results').innerHTML = '🎉 הגעת לסוף רשימת הסרטונים.';
-        return;
-      }
-
-      currentIndex = index;
-      const videoId = videoList[index].videoId;
-      const iframe = document.getElementById('videoPlayer');
-      iframe.src = `${invidiousInstance}/embed/${videoId}?autoplay=1`;
-      document.getElementById('playerContainer').style.display = 'block';
-
-      // עבור אוטומטית לסרטון הבא לאחר זמן מוקצב (נניח 60 שניות)
-      clearTimeout(window.autoNext);
-      window.autoNext = setTimeout(() => playVideo(currentIndex + 1), 60000); // שנה לפי אורך ממוצע או באמצעות API
-    }
-
-    // התחלה: מצא instance זמין
-    window.onload = async () => {
-      await findWorkingInstance();
-    };
-
-    document.getElementById('searchInput').addEventListener('keydown', async (e) => {
-      if (e.key === 'Enter') {
-        const query = e.target.value.trim();
-        if (query) {
-          await searchVideos(query);
-        }
-      }
-    });
-  </script>
+  <iframe src="https://yewtu.be/mix?list=RDQM9KzROr07dq0&continuation=0BdzfKYo7Z8" allowfullscreen></iframe>
 </body>
 </html>
+
