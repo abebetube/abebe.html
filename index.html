@@ -254,33 +254,29 @@
       const video = playlist[index];
       if (!video) return;
 
-      // שימוש ב־youtube-nocookie עם פרמטרים להפחתת פרסומות
-      const videoSrc = `https://www.youtube-nocookie.com/embed/${video.videoId}?autoplay=1&enablejsapi=1&rel=0&modestbranding=1&iv_load_policy=3&showinfo=0`;
+      // עדכון המטמון עם כל הרשימה והאינדקס
+      localStorage.setItem("abe_playlist", JSON.stringify(playlist));
+      localStorage.setItem("abe_index", index);
 
+      // יצירת ה־iframe לניגון הסרטון
+      const videoSrc = `https://www.youtube-nocookie.com/embed/${video.videoId}?autoplay=1&enablejsapi=1&rel=0&modestbranding=1&iv_load_policy=3&showinfo=0`;
       document.getElementById("player-container").innerHTML = `
         <iframe id="ytplayer" src="${videoSrc}" allowfullscreen allow="autoplay"></iframe>`;
 
-      setTimeout(() => {
-        document.getElementById("player-container").scrollIntoView({ behavior: "smooth" });
-      }, 500);
-
+      // עדכון רשימת ההמלצות
       const resultsDiv = document.getElementById("results");
       resultsDiv.innerHTML = "";
-
       playlist.forEach((v, i) => {
         if (i === index) return;
         const div = document.createElement("div");
         div.className = "video-item";
         div.onclick = () => {
           currentIndex = i;
-          saveToCache();
           playVideo(i);
         };
         div.innerHTML = `<img src="${v.thumb}" alt="${v.title}"><div class="video-title">${v.title}</div>`;
         resultsDiv.appendChild(div);
       });
-
-      setTimeout(() => setupPlayerEvents(), 1000);
     }
 
     function toggleFullScreen() {
