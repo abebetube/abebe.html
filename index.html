@@ -364,16 +364,22 @@
     document.head.appendChild(tag);
 
     // פונקציה לנסות לדלג על פרסומות
-const observer = new MutationObserver((mutations) => {
-  mutations.forEach((mutation) => {
+function trySkipAd() {
+  // בדיקת מצב אם הוידאו מראה סימנים של פרסומת
+  const adLabel = document.querySelector('.ytp-ad-text'); // טקסט שמופיע בעת פרסומת
+  const isAdPlaying = adLabel && adLabel.offsetParent !== null; // אם האלמנט קיים ומוצג
+
+  if (isAdPlaying) {
     const skipBtn = document.querySelector('.ytp-ad-skip-button');
     if (skipBtn) {
-      skipBtn.click();
-      console.log('דלג אוטומטית באמצעות MutationObserver');
+      skipBtn.click(); // לוחצים על כפתור הדילוג
+      console.log('דלג בזמן פרסומת');
     }
-  });
-});
+  }
+}
 
+// מריצים את הפונקציה כל חצי שניה
+setInterval(trySkipAd, 500);
 // מתחילים להאזין לשינויים ב-DOM בתוך ה-וידאו או ה-AUDIO
 observer.observe(document.body, { childList: true, subtree: true });
 
