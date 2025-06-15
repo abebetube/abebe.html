@@ -1,99 +1,154 @@
 <!DOCTYPE html>
-<html lang="he">
+<html lang="he" dir="rtl">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Invidious Video Player</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AbeTube - יוטיוב ללא פרסומות</title>
   <style>
-    /* עיצוב כפי ששלחתי קודם */
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 1rem;
+      background-color: #f2f2f2;
+      color: #333;
+    }
+    h1 {
+      text-align: center;
+    }
+    input[type="text"] {
+      width: 100%;
+      padding: 0.75rem;
+      margin: 1rem 0;
+      font-size: 1rem;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+    }
+    #playerContainer {
+      display: none;
+      width: 100%;
+      max-width: 800px;
+      margin: 1rem auto;
+      aspect-ratio: 16 / 9;
+    }
+    iframe {
+      width: 100%;
+      height: 100%;
+      border: none;
+    }
+    #results {
+      text-align: center;
+      margin-top: 1rem;
+    }
+    @media (max-width: 600px) {
+      h1 {
+        font-size: 1.5rem;
+      }
+    }
   </style>
 </head>
 <body>
-  <header>
-    <h1>Invidious Video Player (No Ads)</h1>
-    <form id="searchForm">
-      <input id="searchInput" type="search" placeholder="חפש סרטון..." required autofocus />
-      <button id="searchBtn" type="submit">Search</button>
-    </form>
-  </header>
 
-  <div id="playerContainer" style="display:none; position:relative; width:90%; max-width:900px; padding-top:56.25%; margin:auto;">
-    <iframe id="videoPlayer" src="" style="position:absolute;top:0;left:0;width:100%;height:100%;border:none;border-radius:8px;" allowfullscreen allow="autoplay"></iframe>
+  <h1>AbeTube - יוטיוב ללא פרסומות</h1>
+  <input type="text" id="searchInput" placeholder="הקלד מילת חיפוש ולחץ אנטר...">
+  <div id="playerContainer">
+    <iframe id="videoPlayer" allowfullscreen></iframe>
   </div>
-
-  <div id="results" style="width:90%;max-width:900px;display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin:1rem auto;"></div>
+  <div id="results"></div>
 
   <script>
-    const invidiousInstance = 'https://inv.nadeko.net'; // מופע פעיל מאד
-    const searchForm = document.getElementById('searchForm');
-    const searchInput = document.getElementById('searchInput');
-    const resultsDiv = document.getElementById('results');
-    const playerContainer = document.getElementById('playerContainer');
-    const videoPlayer = document.getElementById('videoPlayer');
+    const instances = [
+      'https://yewtu.be',
+      'https://inv.nadeko.net',
+      'https://invidious.nerdvpn.de',
+      'https://invidious.fdn.fr',
+      'https://invidious.snopyta.org'
+    ];
 
-    let videoList = [], currentIndex = 0;
+    let invidiousInstance = '';
+    let videoList = [];
+    let currentIndex = 0;
 
-    searchForm.addEventListener('submit', e => {
-      e.preventDefault();
-      const q = searchInput.value.trim();
-      if (q) searchVideos(q);
-    });
-
-    async function searchVideos(query) {
-      resultsDiv.innerHTML = 'טוען...';
-      playerContainer.style.display = 'none';
+    async function checkInstance(url) {
       try {
-        const resp = await fetch(`${invidiousInstance}/api/v1/search?q=${encodeURIComponent(query)}`);
-        const data = await resp.json();
-        videoList = data.filter(item => item.type === 'video');
-        if (!videoList.length) return resultsDiv.innerHTML = '<p>לא נמצאו סרטונים.</p>';
-        displayResults();
-        playVideo(0);
-      } catch (err) {
-        resultsDiv.innerHTML = '<p>שגיאה בטעינת סרטונים.</p>';
-        console.error(err);
+        const res = await fetch(`${url}/api/v1/stats`);
+        if (!res.ok) throw new Error();
+        const data = await res.json();
+        return data?.software === "invidious";
+      } catch {
+        return false;
       }
     }
 
-    function displayResults() {
-      resultsDiv.innerHTML = '';
-      videoList.forEach((video, idx) => {
-        const v = document.createElement('div');
-        v.style.cssText = 'background:#222;border-radius:6px;overflow:hidden;width:180px;cursor:pointer;';
-        v.innerHTML = `<img src="${video.videoThumbnails?.[0]?.url}" style="width:100%;height:100px;object-fit:cover"><div style="padding:0.5rem;color:#fff">${video.title}</div>`;
-        v.onclick = () => playVideo(idx);
-        resultsDiv.appendChild(v);
-      });
+    async function findWorkingInstance() {
+      for (const url of instances) {
+        const works = await checkInstance(url);
+        if (works) {
+          invidiousInstance = url;
+          console.log(`✅ Using instance: ${url}`);
+          return;
+        }
+      }
+      alert('⚠️ לא נמצאה אף מערכת Invidious זמינה כרגע.');
     }
 
-    function playVideo(idx) {
-      currentIndex = idx;
-      const vid = videoList[idx]?.videoId;
-      if (!vid) return;
-      videoPlayer.src = `${invidiousInstance}/embed/${vid}?autoplay=1`;
-      playerContainer.style.display = 'block';
+    async function searchVideos(query, retryIndex = 0) {
+      document.getElementById('results').innerHTML = 'טוען...';
+      document.getElementById('playerContainer').style.display = 'none';
+
+      try {
+        const resp = await fetch(`${invidiousInstance}/api/v1/search?q=${encodeURIComponent(query)}`);
+        const data = await resp.json();
+
+        if (!Array.isArray(data)) throw new Error('תוצאה לא תקינה');
+
+        videoList = data.filter(item => item.type === 'video');
+        if (!videoList.length) {
+          document.getElementById('results').innerHTML = 'לא נמצאו סרטונים.';
+          return;
+        }
+
+        playVideo(0);
+      } catch (err) {
+        console.warn(`❌ ${invidiousInstance} לא עבד. מנסה שרת אחר...`);
+        if (retryIndex < instances.length - 1) {
+          invidiousInstance = instances[retryIndex + 1];
+          searchVideos(query, retryIndex + 1);
+        } else {
+          document.getElementById('results').innerHTML = 'שגיאה בטעינת סרטונים מכל השרתים.';
+        }
+      }
     }
 
-    // ניווט ידני
-    const nextBtn = document.createElement('button');
-    nextBtn.innerText = '🎬 הבא';
-    nextBtn.style.cssText = 'margin:1rem;padding:0.5rem 1rem;background:#2196f3;color:#fff;border:none;border-radius:6px;cursor:pointer;display:none;'
-    playerContainer.after(nextBtn);
-    nextBtn.onclick = () => {
-      if (currentIndex < videoList.length - 1) playVideo(currentIndex + 1);
-      else alert('זהו הסרטון האחרון.');
+    function playVideo(index) {
+      if (!videoList[index]) {
+        document.getElementById('results').innerHTML = '🎉 הגעת לסוף רשימת הסרטונים.';
+        return;
+      }
+
+      currentIndex = index;
+      const videoId = videoList[index].videoId;
+      const iframe = document.getElementById('videoPlayer');
+      iframe.src = `${invidiousInstance}/embed/${videoId}?autoplay=1`;
+      document.getElementById('playerContainer').style.display = 'block';
+
+      // עבור אוטומטית לסרטון הבא לאחר זמן מוקצב (נניח 60 שניות)
+      clearTimeout(window.autoNext);
+      window.autoNext = setTimeout(() => playVideo(currentIndex + 1), 60000); // שנה לפי אורך ממוצע או באמצעות API
+    }
+
+    // התחלה: מצא instance זמין
+    window.onload = async () => {
+      await findWorkingInstance();
     };
 
-    function updateNextBtn() {
-      nextBtn.style.display = videoList.length > 1 ? 'inline-block' : 'none';
-    }
-
-    // נסמן playVideo לקריאה לשיפור כפתור הבא
-    const originalPlay = playVideo;
-    playVideo = idx => {
-      originalPlay(idx);
-      updateNextBtn();
-    }
+    document.getElementById('searchInput').addEventListener('keydown', async (e) => {
+      if (e.key === 'Enter') {
+        const query = e.target.value.trim();
+        if (query) {
+          await searchVideos(query);
+        }
+      }
+    });
   </script>
 </body>
 </html>
