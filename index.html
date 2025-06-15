@@ -262,7 +262,7 @@ function playVideo(index) {
   const videoSrc = `https://www.youtube-nocookie.com/embed/${video.videoId}?autoplay=1&enablejsapi=1&rel=0&modestbranding=1&iv_load_policy=3&showinfo=0`;
 
   document.getElementById("player-container").innerHTML = `
-    <embed video id="ytplayer" src="${videoSrc}" allowfullscreen allow="autoplay"></embed>`;
+    <embed videoid="ytplayer" src="${videoSrc}" allowfullscreen allow="autoplay"></embed>`;
 
   setTimeout(() => {
     document.getElementById("player-container").scrollIntoView({ behavior: "smooth" });
