@@ -250,41 +250,34 @@
       }
     }
 
-function playVideo(index) {
-  const video = playlist[index];
-  if (!video) return;
+    function playVideo(index) {
+      const video = playlist[index];
+      if (!video) return;
 
-  // עדכון המטמון בכל פעם שנבחר סרטון
-  localStorage.setItem("abe_playlist", JSON.stringify(playlist));
-  localStorage.setItem("abe_index", index);
+      // עדכון המטמון עם כל הרשימה והאינדקס
+      localStorage.setItem("abe_playlist", JSON.stringify(playlist));
+      localStorage.setItem("abe_index", index);
 
-  // שימוש ב־youtube-nocookie עם פרמטרים להפחתת פרסומות
-  const videoSrc = `https://www.youtube-nocookie.com/embed/${video.videoId}?autoplay=1&enablejsapi=1&rel=0&modestbranding=1&iv_load_policy=3&showinfo=0`;
+      // יצירת ה־iframe לניגון הסרטון
+      const videoSrc = `https://www.youtube-nocookie.com/embed/${video.videoId}?autoplay=1&enablejsapi=1&rel=0&modestbranding=1&iv_load_policy=3&showinfo=0`;
+      document.getElementById("player-container").innerHTML = `
+        <embed videoI did="ytplayer" src="${videoSrc}" allowfullscreen allow="autoplay"></embed>`;
 
-  document.getElementById("player-container").innerHTML = `
-    <embed videoid="ytplayer" src="${videoSrc}" allowfullscreen allow="autoplay"></embed>`;
-
-  setTimeout(() => {
-    document.getElementById("player-container").scrollIntoView({ behavior: "smooth" });
-  }, 500);
-
-  const resultsDiv = document.getElementById("results");
-  resultsDiv.innerHTML = "";
-
-  playlist.forEach((v, i) => {
-    if (i === index) return;
-    const div = document.createElement("div");
-    div.className = "video-item";
-    div.onclick = () => {
-      currentIndex = i;
-      playVideo(i);
-    };
-    div.innerHTML = `<img src="${v.thumb}" alt="${v.title}"><div class="video-title">${v.title}</div>`;
-    resultsDiv.appendChild(div);
-  });
-
-  setTimeout(() => setupPlayerEvents(), 1000);
-}
+      // עדכון רשימת ההמלצות
+      const resultsDiv = document.getElementById("results");
+      resultsDiv.innerHTML = "";
+      playlist.forEach((v, i) => {
+        if (i === index) return;
+        const div = document.createElement("div");
+        div.className = "video-item";
+        div.onclick = () => {
+          currentIndex = i;
+          playVideo(i);
+        };
+        div.innerHTML = `<img src="${v.thumb}" alt="${v.title}"><div class="video-title">${v.title}</div>`;
+        resultsDiv.appendChild(div);
+      });
+    }
 
     function toggleFullScreen() {
       const btn = document.getElementById("fullscreen-btn");
@@ -328,15 +321,15 @@ function playVideo(index) {
       localStorage.setItem("abe_index", currentIndex);
     }
 
-   function loadFromCache() {
-  const list = localStorage.getItem("abe_playlist");
-  const idx = localStorage.getItem("abe_index");
-  if (list && idx !== null) {
-    playlist = JSON.parse(list);
-    currentIndex = parseInt(idx);
-    playVideo(currentIndex);
-  }
-}
+    function loadFromCache() {
+      const list = localStorage.getItem("abe_playlist");
+      const idx = localStorage.getItem("abe_index");
+      if (list && idx !== null) {
+        playlist = JSON.parse(list);
+        currentIndex = parseInt(idx);
+        playVideo(currentIndex);
+      }
+    }
 
     // טעינת ה־API של יוטיוב ל־player
     const tag = document.createElement("script");
